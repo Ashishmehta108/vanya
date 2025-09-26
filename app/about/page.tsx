@@ -1,149 +1,386 @@
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { Card, CardContent } from "@/components/ui/card"
-import { Target, Eye, Award, Users } from "lucide-react"
+"use client";
 
-export default function AboutPage() {
+import React, { useEffect, useState } from "react";
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Save, X, Plus, Trash, Award, Users, Target, Eye } from "lucide-react";
+
+// Types
+interface AboutContent {
+  _id?: string;
+  aboutSection: {
+    aboutHighlightText: string;
+    aboutDescription: string;
+  };
+  mainSection: { heading: string; description: string; _id?: string }[];
+  storySection: {
+    storyHeading: string;
+    storyDescription: string;
+    storyImage: string;
+  };
+  valuesSection: {
+    valuesHeading: string;
+    valuesDescription: string;
+    valuesList: {
+      valueHeading: string;
+      valueDescription: string;
+      _id?: string;
+    }[];
+  };
+}
+
+export default function AboutPageEditor() {
+  const [isAdmin, setIsAdmin] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [content, setContent] = useState<AboutContent | null>(null);
+
+  // Fetch data
+  useEffect(() => {
+    fetch("/api/about")
+      .then((res) => res.json())
+      .then((data) => setContent(data.aboutData));
+  }, []);
+
+  const handleSave = async () => {
+    if (!content) return;
+    setSaving(true);
+    try {
+      await fetch("/api/about", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(content),
+      });
+      setIsEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // refetch to reset
+    fetch("/api/about")
+      .then((res) => res.json())
+      .then((data) => setContent(data.aboutData));
+  };
+
+  if (!content) return <div>Loading...</div>;
+
   return (
     <div className="min-h-screen">
       <Header />
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary/10 to-primary/5 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">About Vanya Foundation</h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto text-pretty">
-              Founded with a vision to create lasting positive change, Vanya Foundation has been at the forefront of
-              community development, education, and healthcare initiatives across India for over 15 years.
-            </p>
-          </div>
+      {/* Admin Controls */}
+      {isAdmin && (
+        <div className="fixed top-4 right-4 z-50 flex gap-2">
+          {!isEditing ? (
+            <Button onClick={() => setIsEditing(true)} className="bg-primary">
+              Edit Page
+            </Button>
+          ) : (
+            <>
+              <Button
+                onClick={handleSave}
+                className="bg-green-600 hover:bg-green-700"
+                disabled={saving}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {saving ? "Saving..." : "Save"}
+              </Button>
+              <Button onClick={handleCancel} variant="outline">
+                <X className="w-4 h-4 mr-2" /> Cancel
+              </Button>
+            </>
+          )}
         </div>
+      )}
+
+      {/* About Section */}
+      <section className="bg-gradient-to-r from-primary/10 to-primary/5 py-16 text-center">
+        {isEditing ? (
+          <div className="max-w-2xl mx-auto space-y-4">
+            <Input
+              value={content.aboutSection.aboutHighlightText}
+              onChange={(e) =>
+                setContent({
+                  ...content,
+                  aboutSection: {
+                    ...content.aboutSection,
+                    aboutHighlightText: e.target.value,
+                  },
+                })
+              }
+            />
+            <Textarea
+              value={content.aboutSection.aboutDescription}
+              onChange={(e) =>
+                setContent({
+                  ...content,
+                  aboutSection: {
+                    ...content.aboutSection,
+                    aboutDescription: e.target.value,
+                  },
+                })
+              }
+              rows={3}
+            />
+          </div>
+        ) : (
+          <>
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              {content.aboutSection.aboutHighlightText}
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              {content.aboutSection.aboutDescription}
+            </p>
+          </>
+        )}
       </section>
 
       {/* Mission & Vision */}
       <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <Card className="border-l-4 border-l-primary">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          {content.mainSection.map((item, idx) => (
+            <Card key={item._id ?? idx} className="border-l-4 border-l-primary">
               <CardContent className="p-8">
-                <div className="flex items-center mb-4">
-                  <Target className="w-8 h-8 text-primary mr-3" />
-                  <h2 className="text-2xl font-bold">Our Mission</h2>
-                </div>
-                <p className="text-muted-foreground leading-relaxed">
-                  To empower underprivileged communities through sustainable development programs in education,
-                  healthcare, and community building, creating opportunities for individuals to break the cycle of
-                  poverty and build better futures for themselves and their families.
-                </p>
+                {isEditing ? (
+                  <div className="space-y-3">
+                    <Input
+                      value={item.heading}
+                      onChange={(e) => {
+                        const newMain = [...content.mainSection];
+                        newMain[idx].heading = e.target.value;
+                        setContent({ ...content, mainSection: newMain });
+                      }}
+                    />
+                    <Textarea
+                      value={item.description}
+                      onChange={(e) => {
+                        const newMain = [...content.mainSection];
+                        newMain[idx].description = e.target.value;
+                        setContent({ ...content, mainSection: newMain });
+                      }}
+                      rows={3}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center mb-4">
+                      {idx === 0 ? (
+                        <Target className="w-8 h-8 text-primary mr-3" />
+                      ) : (
+                        <Eye className="w-8 h-8 text-primary mr-3" />
+                      )}
+                      <h2 className="text-2xl font-bold">{item.heading}</h2>
+                    </div>
+                    <p className="text-muted-foreground">{item.description}</p>
+                  </>
+                )}
               </CardContent>
             </Card>
+          ))}
+        </div>
+      </section>
 
-            <Card className="border-l-4 border-l-primary">
-              <CardContent className="p-8">
-                <div className="flex items-center mb-4">
-                  <Eye className="w-8 h-8 text-primary mr-3" />
-                  <h2 className="text-2xl font-bold">Our Vision</h2>
-                </div>
-                <p className="text-muted-foreground leading-relaxed">
-                  A world where every individual has access to quality education, healthcare, and opportunities for
-                  growth, regardless of their socio-economic background. We envision thriving communities where people
-                  are empowered to create positive change.
+      {/* Story Section */}
+      <section className="py-16 bg-muted/30">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto items-center">
+          <div>
+            {isEditing ? (
+              <div className="space-y-3">
+                <Input
+                  value={content.storySection.storyHeading}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      storySection: {
+                        ...content.storySection,
+                        storyHeading: e.target.value,
+                      },
+                    })
+                  }
+                />
+                <Textarea
+                  value={content.storySection.storyDescription}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      storySection: {
+                        ...content.storySection,
+                        storyDescription: e.target.value,
+                      },
+                    })
+                  }
+                  rows={6}
+                />
+                <Input
+                  value={content.storySection.storyImage}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      storySection: {
+                        ...content.storySection,
+                        storyImage: e.target.value,
+                      },
+                    })
+                  }
+                />
+              </div>
+            ) : (
+              <>
+                <h2 className="text-3xl font-bold mb-6">
+                  {content.storySection.storyHeading}
+                </h2>
+                <p className="text-muted-foreground whitespace-pre-line">
+                  {content.storySection.storyDescription}
                 </p>
-              </CardContent>
-            </Card>
+              </>
+            )}
+          </div>
+          <div>
+            <img
+              src={content.storySection.storyImage}
+              alt="Story"
+              className="rounded-lg shadow-lg w-full"
+            />
           </div>
         </div>
       </section>
 
-      {/* Our Story */}
-      <section className="py-16 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold text-foreground mb-6">Our Story</h2>
-              <div className="space-y-4 text-muted-foreground">
-                <p>
-                  Vanya Foundation was established in 2009 by a group of passionate individuals who witnessed the
-                  challenges faced by rural communities in accessing basic necessities like education and healthcare.
-                </p>
-                <p>
-                  What started as a small initiative to support a local school has grown into a comprehensive
-                  organization working across multiple states in India, touching the lives of over 50,000 individuals.
-                </p>
-                <p>
-                  Our approach is rooted in community participation and sustainable development. We believe in working
-                  with communities, not just for them, ensuring that our programs create lasting impact and empower
-                  local leadership.
-                </p>
-                <p>
-                  Today, we continue to expand our reach while maintaining our core values of transparency,
-                  accountability, and genuine care for the communities we serve.
-                </p>
-              </div>
-            </div>
-            <div>
-              <img
-                src="/placeholder-gmg62.png"
-                alt="Vanya Foundation team and volunteers"
-                className="rounded-lg shadow-lg w-full"
+      {/* Values Section */}
+      <section className="py-16">
+        <div className="text-center mb-12">
+          {isEditing ? (
+            <div className="space-y-3 max-w-2xl mx-auto">
+              <Input
+                value={content.valuesSection.valuesHeading}
+                onChange={(e) =>
+                  setContent({
+                    ...content,
+                    valuesSection: {
+                      ...content.valuesSection,
+                      valuesHeading: e.target.value,
+                    },
+                  })
+                }
+              />
+              <Textarea
+                value={content.valuesSection.valuesDescription}
+                onChange={(e) =>
+                  setContent({
+                    ...content,
+                    valuesSection: {
+                      ...content.valuesSection,
+                      valuesDescription: e.target.value,
+                    },
+                  })
+                }
               />
             </div>
-          </div>
+          ) : (
+            <>
+              <h2 className="text-3xl font-bold mb-4">
+                {content.valuesSection.valuesHeading}
+              </h2>
+              <p className="text-muted-foreground">
+                {content.valuesSection.valuesDescription}
+              </p>
+            </>
+          )}
         </div>
-      </section>
 
-      {/* Our Values */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Our Values</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              These core principles guide everything we do and shape our approach to community development
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Award className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Integrity</h3>
-              <p className="text-muted-foreground text-sm">
-                We maintain the highest standards of honesty and transparency in all our operations and communications.
-              </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+          {content.valuesSection.valuesList.map((val, idx) => (
+            <div key={val._id ?? idx} className="text-center">
+              {isEditing ? (
+                <div className="space-y-2">
+                  <Input
+                    value={val.valueHeading}
+                    onChange={(e) => {
+                      const newVals = [...content.valuesSection.valuesList];
+                      newVals[idx].valueHeading = e.target.value;
+                      setContent({
+                        ...content,
+                        valuesSection: {
+                          ...content.valuesSection,
+                          valuesList: newVals,
+                        },
+                      });
+                    }}
+                  />
+                  <Textarea
+                    value={val.valueDescription}
+                    onChange={(e) => {
+                      const newVals = [...content.valuesSection.valuesList];
+                      newVals[idx].valueDescription = e.target.value;
+                      setContent({
+                        ...content,
+                        valuesSection: {
+                          ...content.valuesSection,
+                          valuesList: newVals,
+                        },
+                      });
+                    }}
+                    rows={3}
+                  />
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      const newVals = content.valuesSection.valuesList.filter(
+                        (_, i) => i !== idx
+                      );
+                      setContent({
+                        ...content,
+                        valuesSection: {
+                          ...content.valuesSection,
+                          valuesList: newVals,
+                        },
+                      });
+                    }}
+                  >
+                    <Trash className="w-4 h-4 mr-2" /> Remove
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-xl font-semibold mb-3">
+                    {val.valueHeading}
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    {val.valueDescription}
+                  </p>
+                </>
+              )}
             </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Community Focus</h3>
-              <p className="text-muted-foreground text-sm">
-                We prioritize community needs and ensure local participation in all our development programs.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Target className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Impact</h3>
-              <p className="text-muted-foreground text-sm">
-                We focus on creating measurable, sustainable change that improves lives and strengthens communities.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Eye className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Innovation</h3>
-              <p className="text-muted-foreground text-sm">
-                We embrace creative solutions and modern approaches to address traditional challenges effectively.
-              </p>
-            </div>
-          </div>
+          ))}
+
+          {isEditing && (
+            <Button
+              onClick={() =>
+                setContent({
+                  ...content,
+                  valuesSection: {
+                    ...content.valuesSection,
+                    valuesList: [
+                      ...content.valuesSection.valuesList,
+                      { valueHeading: "", valueDescription: "" },
+                    ],
+                  },
+                })
+              }
+            >
+              <Plus className="w-4 h-4 mr-2" /> Add Value
+            </Button>
+          )}
         </div>
       </section>
 
       <Footer />
     </div>
-  )
+  );
 }

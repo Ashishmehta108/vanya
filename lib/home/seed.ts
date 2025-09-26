@@ -1,0 +1,57 @@
+import { HomePageContentPlain } from "./types";
+
+export const seedData: HomePageContentPlain = {
+  heroSection: {
+    heroTitle: "Empowering Communities",
+    heroTitleHighlight:
+      "Join Vanya Foundation in our mission to create lasting change...",
+    heroImage: "https://cdn.sanity.io/images/.../example.svg",
+  },
+  workSection: {
+    ourWorkTitle: "Our Work",
+    ourWorkDescription:
+      "We focus on sustainable development through comprehensive programs",
+    workCard: [
+      {
+        WorkcardTitle: "Education",
+        WorkcardDescription:
+          "Providing quality education, scholarships, and learning resources.",
+        workCardbulletPoints: {
+          points: [
+            "School infrastructure development",
+            "Teacher training",
+            "Scholarships",
+          ],
+        },
+      },
+      {
+        WorkcardTitle: "Healthcare",
+        WorkcardDescription: "Ensuring access to quality healthcare services.",
+        workCardbulletPoints: {
+          points: [
+            "Mobile health clinics",
+            "Vaccination drives",
+            "Awareness campaigns",
+          ],
+        },
+      },
+      {
+        WorkcardTitle: "Community Development",
+        WorkcardDescription:
+          "Building sustainable communities through empowerment programs.",
+        workCardbulletPoints: {
+          points: [
+            "Vocational training",
+            "Women empowerment",
+            "Rural development",
+          ],
+        },
+      },
+    ],
+  },
+  ctaSection: {
+    ctaTitle: "Join Us in Making a Difference",
+    ctaDescription:
+      "Your support can transform lives and build stronger communities.",
+  },
+};
