@@ -36,7 +36,6 @@ export default function IconsMap({
   icon,
   ...props
 }: { icon: string } & LucideProps) {
-  
   const normalized = icon.replace(/([A-Z])/g, (m) => m.toLowerCase());
 
   const IconComponent = icons[normalized];
