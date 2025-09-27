@@ -1,149 +1,422 @@
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { Card, CardContent } from "@/components/ui/card"
-import { Target, Eye, Award, Users } from "lucide-react"
+"use client";
 
-export default function AboutPage() {
+import React, { useEffect, useState } from "react";
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Save, X, Plus, Trash, Target, Eye } from "lucide-react";
+import UploadImage from "@/components/UploadImage";
+import IconsMap from "@/components/icons/IconsMap";
+import WorkCardIconSelect from "@/components/icon-select";
+import { useSession } from "@/components/context/SessionContext";
+
+// Types
+interface AboutContent {
+  _id?: string;
+  aboutSection: { aboutHighlightText: string; aboutDescription: string };
+  mainSection: { heading: string; description: string; _id?: string }[];
+  storySection: {
+    storyHeading: string;
+    storyDescription: string;
+    storyImage: string;
+  };
+  valuesSection: {
+    valuesHeading: string;
+    valuesDescription: string;
+    valuesList: {
+      valueHeading: string;
+      valueDescription: string;
+      _id?: string;
+      icon: string;
+    }[];
+  };
+}
+
+export default function AboutPageEditor() {
+  const { user } = useSession();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [content, setContent] = useState<AboutContent | null>(null);
+
+  useEffect(() => setIsAdmin(user?.role === "admin"), [user]);
+
+  useEffect(() => {
+    fetch("/api/about")
+      .then((res) => res.json())
+      .then((data) => setContent(data.aboutData));
+  }, []);
+
+  const handleSave = async () => {
+    if (!isAdmin || !content) return;
+    setSaving(true);
+    try {
+      await fetch("/api/about", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(content),
+      });
+      setIsEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!isAdmin) return;
+    setIsEditing(false);
+    fetch("/api/about")
+      .then((res) => res.json())
+      .then((data) => setContent(data.aboutData));
+  };
+
+  if (!content) return <div className="text-center py-20">Loading...</div>;
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Header />
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary/10 to-primary/5 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">About Vanya Foundation</h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto text-pretty">
-              Founded with a vision to create lasting positive change, Vanya Foundation has been at the forefront of
-              community development, education, and healthcare initiatives across India for over 15 years.
-            </p>
-          </div>
+      {/* Admin Controls */}
+      {isAdmin && (
+        <div className="fixed top-20 right-4 z-50 flex flex-col md:flex-row gap-2">
+          {!isEditing ? (
+            <Button onClick={() => setIsEditing(true)} className="bg-primary">
+              Edit Page
+            </Button>
+          ) : (
+            <>
+              <Button
+                onClick={handleSave}
+                className="bg-green-600 hover:bg-green-700 flex items-center justify-center"
+                disabled={saving}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {saving ? "Saving..." : "Save"}
+              </Button>
+              <Button
+                onClick={handleCancel}
+                variant="outline"
+                className="flex items-center"
+              >
+                <X className="w-4 h-4 mr-2" /> Cancel
+              </Button>
+            </>
+          )}
         </div>
+      )}
+
+      {/* About Section */}
+      <section className="bg-gradient-to-r from-primary/10 to-primary/5 py-12 px-4 md:py-16 text-center">
+        {isEditing ? (
+          <div className="max-w-xl mx-auto space-y-4">
+            <Input
+              value={content.aboutSection.aboutHighlightText}
+              onChange={(e) =>
+                setContent({
+                  ...content,
+                  aboutSection: {
+                    ...content.aboutSection,
+                    aboutHighlightText: e.target.value,
+                  },
+                })
+              }
+            />
+            <Textarea
+              value={content.aboutSection.aboutDescription}
+              onChange={(e) =>
+                setContent({
+                  ...content,
+                  aboutSection: {
+                    ...content.aboutSection,
+                    aboutDescription: e.target.value,
+                  },
+                })
+              }
+              rows={4}
+            />
+          </div>
+        ) : (
+          <>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+              {content.aboutSection.aboutHighlightText}
+            </h1>
+            <p className="text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto">
+              {content.aboutSection.aboutDescription}
+            </p>
+          </>
+        )}
       </section>
 
       {/* Mission & Vision */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <Card className="border-l-4 border-l-primary">
-              <CardContent className="p-8">
-                <div className="flex items-center mb-4">
-                  <Target className="w-8 h-8 text-primary mr-3" />
-                  <h2 className="text-2xl font-bold">Our Mission</h2>
-                </div>
-                <p className="text-muted-foreground leading-relaxed">
-                  To empower underprivileged communities through sustainable development programs in education,
-                  healthcare, and community building, creating opportunities for individuals to break the cycle of
-                  poverty and build better futures for themselves and their families.
-                </p>
+      <section className="py-12 md:py-16 px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
+          {content.mainSection.map((item, idx) => (
+            <Card
+              key={item._id ?? idx}
+              className="border-l-4 border-l-primary hover:shadow-lg transition-shadow duration-300"
+            >
+              <CardContent className="p-6 sm:p-8">
+                {isEditing ? (
+                  <div className="space-y-3">
+                    <Input
+                      value={item.heading}
+                      onChange={(e) => {
+                        const newMain = [...content.mainSection];
+                        newMain[idx].heading = e.target.value;
+                        setContent({ ...content, mainSection: newMain });
+                      }}
+                    />
+                    <Textarea
+                      value={item.description}
+                      onChange={(e) => {
+                        const newMain = [...content.mainSection];
+                        newMain[idx].description = e.target.value;
+                        setContent({ ...content, mainSection: newMain });
+                      }}
+                      rows={3}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center mb-3">
+                      {idx === 0 ? (
+                        <Target className="w-6 h-6 sm:w-8 sm:h-8 text-primary mr-2 sm:mr-3" />
+                      ) : (
+                        <Eye className="w-6 h-6 sm:w-8 sm:h-8 text-primary mr-2 sm:mr-3" />
+                      )}
+                      <h2 className="text-xl sm:text-2xl font-bold">
+                        {item.heading}
+                      </h2>
+                    </div>
+                    <p className="text-muted-foreground text-sm sm:text-base">
+                      {item.description}
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
+          ))}
+        </div>
+      </section>
 
-            <Card className="border-l-4 border-l-primary">
-              <CardContent className="p-8">
-                <div className="flex items-center mb-4">
-                  <Eye className="w-8 h-8 text-primary mr-3" />
-                  <h2 className="text-2xl font-bold">Our Vision</h2>
-                </div>
-                <p className="text-muted-foreground leading-relaxed">
-                  A world where every individual has access to quality education, healthcare, and opportunities for
-                  growth, regardless of their socio-economic background. We envision thriving communities where people
-                  are empowered to create positive change.
+      {/* Story Section */}
+      <section className="py-12 md:py-16 px-4 bg-muted/30">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-6xl mx-auto items-center">
+          <div>
+            {isEditing ? (
+              <div className="space-y-3">
+                <Input
+                  value={content.storySection.storyHeading}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      storySection: {
+                        ...content.storySection,
+                        storyHeading: e.target.value,
+                      },
+                    })
+                  }
+                />
+                <Textarea
+                  value={content.storySection.storyDescription}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      storySection: {
+                        ...content.storySection,
+                        storyDescription: e.target.value,
+                      },
+                    })
+                  }
+                  rows={6}
+                />
+                <UploadImage
+                  value={content.storySection.storyImage}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      storySection: { ...content.storySection, storyImage: e },
+                    })
+                  }
+                />
+              </div>
+            ) : (
+              <>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+                  {content.storySection.storyHeading}
+                </h2>
+                <p className="text-muted-foreground whitespace-pre-line text-sm sm:text-base">
+                  {content.storySection.storyDescription}
                 </p>
-              </CardContent>
-            </Card>
+              </>
+            )}
+          </div>
+          <div>
+            <img
+              src={content.storySection.storyImage}
+              alt="Story"
+              className="rounded-lg shadow-lg w-full max-h-96 object-cover"
+            />
           </div>
         </div>
       </section>
 
-      {/* Our Story */}
-      <section className="py-16 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold text-foreground mb-6">Our Story</h2>
-              <div className="space-y-4 text-muted-foreground">
-                <p>
-                  Vanya Foundation was established in 2009 by a group of passionate individuals who witnessed the
-                  challenges faced by rural communities in accessing basic necessities like education and healthcare.
-                </p>
-                <p>
-                  What started as a small initiative to support a local school has grown into a comprehensive
-                  organization working across multiple states in India, touching the lives of over 50,000 individuals.
-                </p>
-                <p>
-                  Our approach is rooted in community participation and sustainable development. We believe in working
-                  with communities, not just for them, ensuring that our programs create lasting impact and empower
-                  local leadership.
-                </p>
-                <p>
-                  Today, we continue to expand our reach while maintaining our core values of transparency,
-                  accountability, and genuine care for the communities we serve.
-                </p>
-              </div>
-            </div>
-            <div>
-              <img
-                src="/placeholder-gmg62.png"
-                alt="Vanya Foundation team and volunteers"
-                className="rounded-lg shadow-lg w-full"
+      {/* Values Section */}
+      <section className="py-12 md:py-16 px-4">
+        <div className="text-center mb-8 md:mb-12">
+          {isEditing ? (
+            <div className="space-y-3 max-w-xl mx-auto">
+              <Input
+                value={content.valuesSection.valuesHeading}
+                onChange={(e) =>
+                  setContent({
+                    ...content,
+                    valuesSection: {
+                      ...content.valuesSection,
+                      valuesHeading: e.target.value,
+                    },
+                  })
+                }
+              />
+              <Textarea
+                value={content.valuesSection.valuesDescription}
+                onChange={(e) =>
+                  setContent({
+                    ...content,
+                    valuesSection: {
+                      ...content.valuesSection,
+                      valuesDescription: e.target.value,
+                    },
+                  })
+                }
               />
             </div>
-          </div>
+          ) : (
+            <>
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+                {content.valuesSection.valuesHeading}
+              </h2>
+              <p className="text-muted-foreground text-sm sm:text-base">
+                {content.valuesSection.valuesDescription}
+              </p>
+            </>
+          )}
         </div>
-      </section>
 
-      {/* Our Values */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Our Values</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              These core principles guide everything we do and shape our approach to community development
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Award className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Integrity</h3>
-              <p className="text-muted-foreground text-sm">
-                We maintain the highest standards of honesty and transparency in all our operations and communications.
-              </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 max-w-6xl mx-auto">
+          {content.valuesSection.valuesList.map((val, idx) => (
+            <div key={val._id ?? idx} className="text-center">
+              {isEditing ? (
+                <div className="space-y-2 bg-white p-4 rounded-lg shadow-md">
+                  <WorkCardIconSelect
+                    value={val.icon}
+                    onChange={(newIcon) => {
+                      const newVals = [...content.valuesSection.valuesList];
+                      newVals[idx].icon = newIcon;
+                      setContent({
+                        ...content,
+                        valuesSection: {
+                          ...content.valuesSection,
+                          valuesList: newVals,
+                        },
+                      });
+                    }}
+                  />
+                  <Input
+                    value={val.valueHeading}
+                    onChange={(e) => {
+                      const newVals = [...content.valuesSection.valuesList];
+                      newVals[idx].valueHeading = e.target.value;
+                      setContent({
+                        ...content,
+                        valuesSection: {
+                          ...content.valuesSection,
+                          valuesList: newVals,
+                        },
+                      });
+                    }}
+                  />
+                  <Textarea
+                    value={val.valueDescription}
+                    onChange={(e) => {
+                      const newVals = [...content.valuesSection.valuesList];
+                      newVals[idx].valueDescription = e.target.value;
+                      setContent({
+                        ...content,
+                        valuesSection: {
+                          ...content.valuesSection,
+                          valuesList: newVals,
+                        },
+                      });
+                    }}
+                    rows={3}
+                  />
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      const newVals = content.valuesSection.valuesList.filter(
+                        (_, i) => i !== idx
+                      );
+                      setContent({
+                        ...content,
+                        valuesSection: {
+                          ...content.valuesSection,
+                          valuesList: newVals,
+                        },
+                      });
+                    }}
+                  >
+                    <Trash className="w-4 h-4 mr-2" /> Remove
+                  </Button>
+                </div>
+              ) : (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow duration-300">
+                  <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary/10 text-primary mb-3">
+                    <IconsMap icon={val.icon} className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-semibold mb-1">
+                    {val.valueHeading}
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-300 text-sm sm:text-base">
+                    {val.valueDescription}
+                  </p>
+                </div>
+              )}
             </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Community Focus</h3>
-              <p className="text-muted-foreground text-sm">
-                We prioritize community needs and ensure local participation in all our development programs.
-              </p>
+          ))}
+
+          {isEditing && (
+            <div className="flex justify-center col-span-full">
+              <Button
+                onClick={() =>
+                  setContent({
+                    ...content,
+                    valuesSection: {
+                      ...content.valuesSection,
+                      valuesList: [
+                        ...content.valuesSection.valuesList,
+                        {
+                          valueHeading: "",
+                          valueDescription: "",
+                          icon: "Chef",
+                        },
+                      ],
+                    },
+                  })
+                }
+                className="flex items-center"
+              >
+                <Plus className="w-4 h-4 mr-2" /> Add Value
+              </Button>
             </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Target className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Impact</h3>
-              <p className="text-muted-foreground text-sm">
-                We focus on creating measurable, sustainable change that improves lives and strengthens communities.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Eye className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Innovation</h3>
-              <p className="text-muted-foreground text-sm">
-                We embrace creative solutions and modern approaches to address traditional challenges effectively.
-              </p>
-            </div>
-          </div>
+          )}
         </div>
       </section>
 
       <Footer />
     </div>
-  )
+  );
 }

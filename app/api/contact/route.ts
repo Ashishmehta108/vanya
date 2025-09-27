@@ -1,45 +1,24 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server";
+import { connectToDatabase } from "@/lib/mongodb";
+import { ContactPageModel } from "@/lib/contact/contact";
+import { seedContact } from "@/lib/contact/seed";
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { firstName, lastName, email, phone, subject, message } = body
+export async function GET() {
+  await connectToDatabase();
+  const data = await ContactPageModel.findOne();
+  return NextResponse.json({ contactPage: data });
+}
 
-    // Validate required fields
-    if (!firstName || !lastName || !email || !subject || !message) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-    }
 
-    // Send email
-    const emailResponse = await fetch(`${request.nextUrl.origin}/api/send-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        type: "contact-form",
-        data: { firstName, lastName, email, phone, subject, message },
-      }),
-    })
 
-    if (!emailResponse.ok) {
-      throw new Error("Failed to send email")
-    }
+export async function PATCH(req: Request) {
+  await connectToDatabase();
+  const body = await req.json();
 
-    // In a real application, you might also save to database here
-    console.log("[v0] Contact form submitted:", { firstName, lastName, email, subject })
+  const updated = await ContactPageModel.findOneAndUpdate({}, body, {
+    new: true,
+    upsert: true,
+  });
 
-    return NextResponse.json({
-      success: true,
-      message: "Thank you for your message. We will get back to you soon!",
-    })
-  } catch (error) {
-    console.error("[v0] Contact form error:", error)
-    return NextResponse.json(
-      {
-        error: "Failed to submit contact form. Please try again.",
-      },
-      { status: 500 },
-    )
-  }
+  return NextResponse.json({ contactPage: updated });
 }

@@ -1,87 +1,139 @@
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
-import { Calendar, User, ArrowLeft, Share2, Heart, Tag, Clock } from "lucide-react"
+"use client";
 
-// Mock blog post data - in real app, this would be fetched based on the ID
-const blogPost = {
+import { useEffect, useState } from "react";
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ArrowLeft, Edit2, Check } from "lucide-react";
+import UploadImage from "@/components/UploadImage";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import ReactMde from "react-mde";
+import Showdown from "showdown";
+import "react-mde/lib/styles/css/react-mde-all.css";
+import { useSession } from "@/components/context/SessionContext";
+import { useParams } from "next/navigation";
+
+// Mock initial blog post data
+const initialBlogPost = {
   id: 1,
   title: "Transforming Rural Education: Our Digital Literacy Initiative",
   excerpt:
-    "How we're bridging the digital divide in rural communities through innovative computer education programs that are changing lives one click at a time.",
-  content: `
-    <p>In today's digital age, access to technology and digital literacy skills are no longer luxuries—they are necessities. Yet, millions of children in rural India still lack basic computer skills and internet access. At Vanya Foundation, we recognized this critical gap and launched our Digital Literacy Initiative to bridge the digital divide in rural communities.</p>
+    "How we're bridging the digital divide in rural communities through innovative computer education programs.",
+  content: `# Welcome to Digital Literacy
 
-    <h2>The Challenge</h2>
-    <p>When we first visited the remote villages of West Bengal in early 2023, we found that less than 10% of school-age children had ever used a computer. Most had never seen the internet, and many teachers lacked the skills to integrate technology into their teaching methods. This digital divide was not just limiting educational opportunities—it was creating a barrier to future employment and economic growth.</p>
+In today's digital age, access to technology and digital literacy skills are no longer luxuries. Our initiative brings **digital literacy programs** to rural communities.
 
-    <h2>Our Approach</h2>
-    <p>Our Digital Literacy Initiative takes a comprehensive approach to addressing this challenge:</p>
-    
-    <h3>1. Infrastructure Development</h3>
-    <p>We partner with local schools to establish computer labs equipped with refurbished computers, reliable internet connections, and backup power solutions. Each lab serves 200-300 students and is designed to be sustainable and maintainable by the local community.</p>
+## Highlights
 
-    <h3>2. Teacher Training</h3>
-    <p>We provide intensive training programs for local teachers, covering basic computer skills, internet safety, and methods for integrating technology into traditional subjects. Our train-the-trainer model ensures that knowledge is passed on and sustained within the community.</p>
+- Free computer classes
+- Access to laptops and internet
+- Skill-building workshops
 
-    <h3>3. Student Programs</h3>
-    <p>Students participate in structured computer education classes that cover:</p>
-    <ul>
-      <li>Basic computer operations and software</li>
-      <li>Internet navigation and research skills</li>
-      <li>Digital communication and collaboration</li>
-      <li>Creative applications like digital art and video editing</li>
-      <li>Online safety and digital citizenship</li>
-    </ul>
+## Join Us
 
-    <h2>Impact and Results</h2>
-    <p>Since launching the program, we have achieved remarkable results:</p>
-    <ul>
-      <li><strong>15 computer labs</strong> established across rural West Bengal</li>
-      <li><strong>2,500+ students</strong> trained in basic digital literacy</li>
-      <li><strong>150+ teachers</strong> equipped with technology integration skills</li>
-      <li><strong>85% improvement</strong> in students' confidence with technology</li>
-    </ul>
-
-    <h2>Success Stories</h2>
-    <p>Ravi, a 14-year-old student from Murshidabad district, had never seen a computer before joining our program. Today, he creates digital presentations for his school projects and has even started teaching his younger siblings basic computer skills. His teacher, Mrs. Banerjee, now uses digital tools to make her math lessons more engaging and interactive.</p>
-
-    <p>"The computer lab has opened up a whole new world for our children," says Mrs. Banerjee. "They are more curious, more confident, and better prepared for the future."</p>
-
-    <h2>Looking Forward</h2>
-    <p>Our Digital Literacy Initiative is expanding to reach more communities across India. In 2024, we plan to establish 25 additional computer labs and train 5,000 more students. We are also developing mobile digital literacy units to reach even more remote areas.</p>
-
-    <p>The digital divide is not just about access to technology—it's about access to opportunities. Through our Digital Literacy Initiative, we are ensuring that every child, regardless of their geographic location or economic background, has the chance to participate in the digital economy and build a brighter future.</p>
-  `,
+Contact us to get involved and make a difference!
+`,
   author: "Dr. Priya Sharma",
-  date: "January 15, 2024",
+  date: "2024-01-15",
   category: "Education",
   tags: ["Digital Literacy", "Rural Development", "Technology"],
-  image: "/placeholder.svg?height=400&width=800&text=Digital+Literacy+Initiative",
+  image:
+    "/placeholder.svg?height=400&width=800&text=Digital+Literacy+Initiative",
   readTime: "5 min read",
-}
-
-const relatedPosts = [
-  {
-    id: 2,
-    title: "Teacher Training Programs: Building Capacity in Rural Schools",
-    excerpt: "How our comprehensive teacher training programs are improving education quality in rural areas.",
-    image: "/placeholder.svg?height=200&width=300&text=Teacher+Training",
-    date: "January 8, 2024",
-  },
-  {
-    id: 3,
-    title: "Technology for Good: Innovative Solutions in Education",
-    excerpt: "Exploring how technology can be leveraged to solve educational challenges in underserved communities.",
-    image: "/placeholder.svg?height=200&width=300&text=Technology+Education",
-    date: "December 28, 2023",
-  },
-]
+};
 
 export default function BlogPostPage() {
+  const params = useParams();
+  console.log(params)
+  const { user } = useSession();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    setIsAdmin(user?.role === "admin");
+  }, [user]);
+
+  const [blogPost, setBlogPost] = useState(initialBlogPost);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [selectedTab, setSelectedTab] = useState<"write" | "preview">("write");
+
+  const converter = new Showdown.Converter({
+    tables: true,
+    simplifiedAutoLink: true,
+    strikethrough: true,
+    tasklists: true,
+  });
+
+  // Update any field
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setBlogPost((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Tags handlers
+  const handleTagChange = (index: number, value: string) => {
+    const newTags = [...blogPost.tags];
+    newTags[index] = value;
+    setBlogPost((prev) => ({ ...prev, tags: newTags }));
+  };
+  const handleAddTag = () =>
+    setBlogPost((prev) => ({ ...prev, tags: [...prev.tags, ""] }));
+  const handleRemoveTag = (index: number) =>
+    setBlogPost((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((_, i) => i !== index),
+    }));
+
+  // Image upload
+  const handleImageUpload = (e: string) => {
+    handleInputChange("image", e);
+  };
+
+  useEffect(() => {
+    const fetchBlogPost = async () => {
+      try {
+        console.log(params.id);
+        const response = await fetch(`/api/blogs/${params.id}`);
+        const data = await response.json();
+        console.log(data);
+        if (data?.[0].blogPost) setBlogPost(data[0].blogPost);
+      } catch (err) {
+        console.error("Error fetching blog post:", err);
+      }
+    };
+    fetchBlogPost();
+  }, [blogPost.id]);
+
+  // Save changes to backend
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveMessage("");
+    try {
+      const res = await fetch("/api/blogs", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blogPost }),
+      });
+      const data = await res.json();
+      if (res.ok) setSaveMessage("Blog saved successfully!");
+      else setSaveMessage(data.error || "Failed to save blog.");
+      setIsEditing(false);
+    } catch {
+      setSaveMessage("Network error. Try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Format date nicely
+  const formattedDate = new Date(blogPost.date).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -98,132 +150,211 @@ export default function BlogPostPage() {
         </div>
       </div>
 
-      {/* Article Header */}
       <section className="py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <Badge variant="default">{blogPost.category}</Badge>
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Clock className="w-4 h-4 mr-1" />
-                <span>{blogPost.readTime}</span>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          {/* Title + Edit (admin only) */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl md:text-4xl font-bold">{blogPost.title}</h1>
+            {isAdmin && (
+              <Button
+                size="sm"
+                variant={isEditing ? "default" : "outline"}
+                onClick={() => setIsEditing((prev) => !prev)}
+              >
+                {isEditing ? (
+                  <>
+                    <Check className="w-4 h-4 mr-1" /> Editing
+                  </>
+                ) : (
+                  <>
+                    <Edit2 className="w-4 h-4 mr-1" /> Edit
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+
+          {/* Author / Date / Read Time */}
+          <div className="text-sm text-gray-600 flex flex-wrap gap-4">
+            <span>
+              By <b>{blogPost.author}</b>
+            </span>
+            <span>{formattedDate}</span>
+            <span>{blogPost.readTime}</span>
+          </div>
+
+          {/* Admin Editing Mode */}
+          {isAdmin && isEditing ? (
+            <>
+              <input
+                className="text-3xl md:text-4xl font-bold w-full border p-2 rounded"
+                value={blogPost.title}
+                onChange={(e) => handleInputChange("title", e.target.value)}
+                placeholder="Title"
+              />
+              <textarea
+                className="text-lg p-2 border rounded w-full"
+                value={blogPost.excerpt}
+                onChange={(e) => handleInputChange("excerpt", e.target.value)}
+                placeholder="Excerpt"
+              />
+              <input
+                className="p-2 border rounded w-full"
+                value={blogPost.category}
+                onChange={(e) => handleInputChange("category", e.target.value)}
+                placeholder="Category"
+              />
+              <input
+                className="p-2 border rounded w-full"
+                value={blogPost.author}
+                onChange={(e) => handleInputChange("author", e.target.value)}
+                placeholder="Author"
+              />
+              <input
+                type="date"
+                className="p-2 border rounded w-full"
+                value={blogPost.date}
+                onChange={(e) => handleInputChange("date", e.target.value)}
+              />
+              <input
+                className="p-2 border rounded w-full"
+                value={blogPost.readTime}
+                onChange={(e) => handleInputChange("readTime", e.target.value)}
+                placeholder="Read Time"
+              />
+
+              {/* Image Upload */}
+              <div className="aspect-video relative mb-6">
+                <img
+                  src={blogPost.image}
+                  alt={blogPost.title}
+                  className="w-full h-full object-cover rounded"
+                />
+                <UploadImage
+                  value={blogPost.image}
+                  onChange={(e) => handleImageUpload(e)}
+                />
               </div>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 text-balance">{blogPost.title}</h1>
-            <p className="text-lg text-muted-foreground mb-6 text-pretty">{blogPost.excerpt}</p>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center text-sm text-muted-foreground">
-                <User className="w-4 h-4 mr-2" />
-                <span className="mr-6">{blogPost.author}</span>
-                <Calendar className="w-4 h-4 mr-2" />
-                <span>{blogPost.date}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Heart className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Featured Image */}
-          <div className="aspect-video mb-8 rounded-lg overflow-hidden">
-            <img
-              src={blogPost.image || "/placeholder.svg"}
-              alt={blogPost.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Article Content */}
-      <section className="pb-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="prose prose-lg max-w-none">
-            <div dangerouslySetInnerHTML={{ __html: blogPost.content }} />
-          </div>
-
-          {/* Tags */}
-          <div className="mt-8 pt-8 border-t">
-            <div className="flex items-center gap-2 mb-4">
-              <Tag className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">Tags:</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {blogPost.tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Related Posts */}
-      <section className="py-16 bg-muted/30">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-foreground mb-8">Related Articles</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {relatedPosts.map((post) => (
-              <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="aspect-video">
-                  <img src={post.image || "/placeholder.svg"} alt={post.title} className="w-full h-full object-cover" />
-                </div>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-3 line-clamp-2">
-                    <Link href={`/blog/${post.id}`} className="hover:text-primary transition-colors">
-                      {post.title}
-                    </Link>
-                  </h3>
-                  <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{post.excerpt}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      <span>{post.date}</span>
-                    </div>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/blog/${post.id}`}>Read More</Link>
+              {/* Tags */}
+              <div className="flex flex-wrap gap-2 items-center mb-4">
+                {blogPost.tags.map((tag, i) => (
+                  <div key={i} className="flex items-center gap-1">
+                    <input
+                      className="border p-1 rounded text-sm"
+                      value={tag}
+                      onChange={(e) => handleTagChange(i, e.target.value)}
+                      placeholder="Tag"
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleRemoveTag(i)}
+                    >
+                      &times;
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+                ))}
+                <Button size="sm" onClick={handleAddTag}>
+                  + Add Tag
+                </Button>
+              </div>
 
-      {/* Call to Action */}
-      <section className="py-16 bg-primary text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Inspired by Our Work?</h2>
-          <p className="text-lg opacity-90 mb-8 text-pretty">
-            Join us in creating positive change. Your support can help us expand programs like our Digital Literacy
-            Initiative to reach even more communities.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/donate">Make a Donation</Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="border-white text-white hover:bg-white hover:text-primary bg-transparent"
-            >
-              <Link href="/volunteer">Volunteer With Us</Link>
-            </Button>
-          </div>
+              {/* Markdown Editor */}
+              <ReactMde
+                value={blogPost.content}
+                onChange={(val) => handleInputChange("content", val)}
+                selectedTab={selectedTab}
+                onTabChange={setSelectedTab}
+                generateMarkdownPreview={(markdown) =>
+                  Promise.resolve(converter.makeHtml(markdown))
+                }
+                childProps={{
+                  writeButton: { tabIndex: -1 },
+                }}
+              />
+
+              {/* Save Button */}
+              <div className="flex items-center gap-4 mt-4">
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+                {saveMessage && <span>{saveMessage}</span>}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* View Mode */}
+              <p className="text-lg">{blogPost.excerpt}</p>
+              <div className="aspect-video mb-6">
+                <img
+                  src={blogPost.image}
+                  alt={blogPost.title}
+                  className="w-full h-full object-cover rounded"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {blogPost.tags.map((tag, i) => (
+                  <span
+                    key={i}
+                    className="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div className="prose max-w-full dark:prose-invert">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({ node, ...props }) => (
+                      <h1 className="text-4xl font-bold mt-6 mb-4" {...props} />
+                    ),
+                    h2: ({ node, ...props }) => (
+                      <h2
+                        className="text-3xl font-semibold mt-6 mb-3"
+                        {...props}
+                      />
+                    ),
+                    h3: ({ node, ...props }) => (
+                      <h3
+                        className="text-2xl font-semibold mt-5 mb-2"
+                        {...props}
+                      />
+                    ),
+                    p: ({ node, ...props }) => (
+                      <p className="mb-4" {...props} />
+                    ),
+                    li: ({ node, ...props }) => (
+                      <li className="ml-6 list-disc mb-2" {...props} />
+                    ),
+                    code: ({ node, inline, className, children, ...props }) =>
+                      inline ? (
+                        <code
+                          className="bg-gray-200 text-red-600 px-1 rounded"
+                          {...props}
+                        >
+                          {children}
+                        </code>
+                      ) : (
+                        <pre
+                          className="bg-gray-900 text-gray-100 p-4 rounded overflow-auto"
+                          {...props}
+                        >
+                          <code>{children}</code>
+                        </pre>
+                      ),
+                  }}
+                >
+                  {blogPost.content}
+                </ReactMarkdown>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
       <Footer />
     </div>
-  )
+  );
 }
