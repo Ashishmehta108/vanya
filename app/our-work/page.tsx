@@ -52,7 +52,7 @@ export default function OurWorkPageEditor() {
     removeInitiative,
     updateCTA,
   } = useWork();
-
+  console.log(content);
   return (
     <div className="min-h-screen">
       <Header />
@@ -318,39 +318,39 @@ export default function OurWorkPageEditor() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-white text-black text-center shadow-inner">
+      <section className="py-20 bg-gray-50 text-gray-900 text-center shadow-inner relative">
         {isEditing ? (
-          <div className="space-y-4 mb-8">
+          <div className="space-y-6 mb-10 max-w-2xl mx-auto">
             <Input
               value={content.ctaSection?.ctaTitle || ""}
               onChange={(e) => updateCTA("ctaTitle", e.target.value)}
-              className="text-2xl font-bold bg-gray-100 border-gray-300 text-black shadow-inner placeholder-black/50"
+              className="text-3xl font-extrabold bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500 shadow-inner focus:ring-2 focus:ring-blue-300 transition-all"
               placeholder="CTA title"
             />
             <Textarea
               value={content.ctaSection?.ctaDescription || ""}
               onChange={(e) => updateCTA("ctaDescription", e.target.value)}
-              className="bg-gray-100 border-gray-300 text-black shadow-inner placeholder-black/50"
-              rows={3}
+              className="bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500 shadow-inner focus:ring-2 focus:ring-blue-300 transition-all"
+              rows={4}
               placeholder="CTA description"
             />
           </div>
         ) : (
-          <>
-            <h2 className="text-3xl font-bold mb-4">
+          <div className="max-w-2xl mx-auto mb-12">
+            <h2 className="text-4xl font-extrabold mb-4">
               {content.ctaSection?.ctaTitle}
             </h2>
-            <p className="text-lg opacity-90 mb-8">
+            <p className="text-lg text-gray-700 opacity-90">
               {content.ctaSection?.ctaDescription}
             </p>
-          </>
+          </div>
         )}
 
-        <div className="flex flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button
             asChild
             size="lg"
-            className="bg-white text-black border-[1px] border-neutral-300 px-8 py-3 rounded-lg shadow-inner hover:shadow-lg hover:bg-gray-100 transition-all duration-200"
+            className="bg-white text-gray-900 border border-gray-300 px-10 py-3 rounded-xl shadow-md hover:shadow-lg hover:bg-gray-100 transition-all duration-200"
           >
             <Link href="/donate">Make a Donation</Link>
           </Button>
@@ -358,7 +358,7 @@ export default function OurWorkPageEditor() {
           <Button
             asChild
             size="lg"
-            className="bg-white text-black border-[1px] border-neutral-300 px-8 py-3 rounded-lg shadow-inner hover:shadow-lg hover:bg-gray-100 transition-all duration-200"
+            className="bg-white text-gray-900 border border-gray-300 px-10 py-3 rounded-xl shadow-md hover:shadow-lg hover:bg-gray-100 transition-all duration-200"
           >
             <Link href="/volunteer">Volunteer With Us</Link>
           </Button>

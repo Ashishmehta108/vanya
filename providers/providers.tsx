@@ -26,7 +26,7 @@ export default function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
         <AppProviders>
-          <Toaster />
+          <Toaster position="top-right" />
           <HomePageProvider>
             <WorkProvider>{children}</WorkProvider>
           </HomePageProvider>

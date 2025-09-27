@@ -73,4 +73,8 @@ export const workSeed = {
       },
     ],
   },
+  ctaSection: {
+    ctaTitle: "Join Us in Making a Difference",
+    ctaDescription: "Your support can transform lives and build stronger communities.",
+  },
 };

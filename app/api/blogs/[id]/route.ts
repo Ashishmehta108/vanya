@@ -18,14 +18,35 @@ export async function GET(
 
 
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   const id = params.id;
   const body = await request.json();
-  const blogPost = await BlogPost.findByIdAndUpdate(id, { $set: body });
-  return NextResponse.json({
-    message: "Blog post updated successfully",
-    blogPost,
-  });
+  console.log("Request body:", body);
+
+  try {
+    const blogPost = await BlogPost.findOneAndUpdate(
+      { id: id },       // using your schema's 'id' field
+      { $set: body },
+      { new: true }     // return updated doc
+    );
+
+    if (!blogPost) {
+      return NextResponse.json({ message: "Blog post not found" }, { status: 404 });
+    }
+
+    console.log("Updated blog post:", blogPost);
+    return NextResponse.json({
+      message: "Blog post updated successfully",
+      blogPost,
+    });
+  } catch (error) {
+    console.error("Error updating blog post:", error);
+    return NextResponse.json({ message: "Error updating blog post" }, { status: 500 });
+  }
 }
 
 

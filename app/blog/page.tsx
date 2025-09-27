@@ -140,7 +140,7 @@ export default function BlogPage() {
     setIsSaving(true);
     setSaveMessage("");
     try {
-      const response = await fetch(`/api/blogs/${params.id}`, {
+      const response = await fetch(`/api/blogs`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ blogPosts }),
@@ -356,7 +356,7 @@ export default function BlogPage() {
             <Button
               onClick={handleSaveAll}
               disabled={isSaving}
-              className="bg-green-600 text-white hover:bg-green-500"
+              className=" text-white hover:bg-primary/90"
             >
               {isSaving ? "Saving..." : "Save All Changes"}
             </Button>

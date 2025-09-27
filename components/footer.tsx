@@ -9,6 +9,7 @@ import {
   Instagram,
   Linkedin,
 } from "lucide-react";
+import Image from "next/image";
 
 export function Footer() {
   return (
@@ -19,10 +20,17 @@ export function Footer() {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-inner">
-                <Heart className="w-6 h-6 text-primary" />
+                <Image
+                  src={
+                    "https://lh3.googleusercontent.com/a/ACg8ocKbTHXFQEmPOK9xLQbiqA94EGUz9YgS79Svrl9OLhct6cIlIug=s96-c"
+                  }
+                  alt="Logo"
+                  width={96}
+                  height={96}
+                />
               </div>
               <div>
-                <h3 className="text-2xl font-bold">Vanya Foundation</h3>
+                <h3 className="text-2xl font-bold">Himvanya Foundation</h3>
                 <p className="text-sm opacity-90">Empowering Communities</p>
               </div>
             </div>
@@ -90,10 +98,7 @@ export function Footer() {
 
         {/* Bottom */}
         <div className="border-t border-white/20 mt-8 pt-8 text-center text-sm opacity-90">
-          <p>
-            &copy; 2025 Vanya Foundation. All rights reserved. | Reg. No:
-            12345678
-          </p>
+          <p>&copy; 2025 Himvanya Foundation. All rights reserved.</p>
         </div>
       </div>
     </footer>

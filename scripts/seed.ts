@@ -1,3 +1,4 @@
+import Work from "@/lib/our-work/work";
 import { aboutModel } from "../lib/about/about";
 import { aboutSeedData } from "../lib/about/seed";
 import { Blog } from "../lib/blog/blog";
@@ -10,27 +11,29 @@ import { gallerySeed } from "../lib/gallery/seed";
 import { HomePageContentModel } from "../lib/home/home";
 import { seedData } from "../lib/home/seed";
 import { connectToDatabase } from "../lib/mongodb";
+import { workSeed } from "@/lib/our-work/seed";
 
 
-async function MakeSeed() {
+export async function MakeSeed() {
+    console.log("seeding started")
     try {
         await connectToDatabase()
         console.log("createdAbout seed")
         const about = await aboutModel.create(aboutSeedData)
-        console.log("About seed data created", about)
+        console.log("About seed data created")
         const home = await HomePageContentModel.create(seedData)
-        console.log("Home seed data created", home)
-        const contact = await ContactPageModel.create(seedContact)
-        console.log("Contact seed data created", contact)
+        console.log("Home seed data created")
+        const contact = await seedContact()
+        const work = await Work.create(workSeed)
+        console.log("Contact seed data created")
         const gallery = await galleryModel.create(gallerySeed)
-        console.log("Gallery seed data created", gallery)
+        console.log("Gallery seed data created")
         const blogs = await Blog.create(BlogSeed)
-        console.log("Blogs seed data created", blogs)
+        console.log("Blogs seed data created")
         const blogPages = await BlogPost.create(BlogSeed.blogPosts)
-        console.log("Blog Pages seed data created", blogPages)
+        console.log("Blog Pages seed data created")
 
 
-        process.exit(0)
 
     } catch (error) {
         console.log("Error creating about seed data", error)
@@ -38,7 +41,6 @@ async function MakeSeed() {
 }
 
 
-MakeSeed()
 // CommonJS version to avoid ESM path issues
 // const { connectToDatabase } = require("../lib/mongodb");
 // const { aboutModel } = require("../lib/about/about");

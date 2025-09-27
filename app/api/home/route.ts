@@ -41,7 +41,12 @@ export async function PATCH(req: NextRequest, res: NextResponse) {
     await runMiddleware(req, res, logger);
 
     await connectToDatabase();
-    const updated = await HomePageContentModel.findOne().lean();
+    const body = await req.json();
+    const updated = await HomePageContentModel.findOneAndUpdate(
+      {},
+      body,
+      { new: true }
+    ).lean();
 
     return NextResponse.json(
       {

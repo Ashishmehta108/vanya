@@ -25,14 +25,13 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<CustomPayload | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch current user from /api/auth/me
   const fetchUser = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/auth/me");
       if (res.ok) {
         const data = await res.json();
-        console.log(data);
+
         setUser(data.user);
       } else {
         setUser(null);

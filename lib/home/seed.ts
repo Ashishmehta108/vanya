@@ -1,7 +1,7 @@
 import { HomePageContentPlain } from "./types";
 
 export const seedData: HomePageContentPlain = {
-  topImage: "https://cdn.sanity.io/images/.../example.svg",
+  topImage: "https://www.smilefoundationindia.org/wp-content/uploads/2022/09/Banner1-scaled.jpg.webp",
   heroSection: {
     heroTitle: "Empowering Communities",
     heroTitleHighlight: " Transforming Lives",

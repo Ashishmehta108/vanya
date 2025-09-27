@@ -32,6 +32,10 @@ const workSchema = new Schema(
         default: [],
       },
     },
+    ctaSection: {
+      ctaTitle: { type: String, default: "" },
+      ctaDescription: { type: String, default: "" },
+    },
   },
   {
     timestamps: true,

@@ -15,9 +15,9 @@ import "react-mde/lib/styles/css/react-mde-all.css";
 import { useSession } from "@/components/context/SessionContext";
 import { useParams } from "next/navigation";
 
-// Mock initial blog post data
-const initialBlogPost = {
-  id: 1,
+// Seed/fallback blog post data
+const fallbackBlogPost = {
+  id: "1",
   title: "Transforming Rural Education: Our Digital Literacy Initiative",
   excerpt:
     "How we're bridging the digital divide in rural communities through innovative computer education programs.",
@@ -46,15 +46,9 @@ Contact us to get involved and make a difference!
 
 export default function BlogPostPage() {
   const params = useParams();
-  console.log(params)
   const { user } = useSession();
   const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    setIsAdmin(user?.role === "admin");
-  }, [user]);
-
-  const [blogPost, setBlogPost] = useState(initialBlogPost);
+  const [blogPost, setBlogPost] = useState(fallbackBlogPost);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
@@ -67,51 +61,53 @@ export default function BlogPostPage() {
     tasklists: true,
   });
 
-  // Update any field
+  useEffect(() => {
+    setIsAdmin(user?.role === "admin");
+  }, [user]);
+
+  // Fetch blog post from API
+  useEffect(() => {
+    const fetchBlogPost = async () => {
+      try {
+        if (!params.id) return;
+        const res = await fetch(`/api/blogs/${params.id}`);
+        const data = await res.json();
+        console.log(data);
+        if (data?.blogPost[0]) setBlogPost(data?.blogPost[0]);
+      } catch (err) {
+        console.error("Failed to fetch blog post:", err);
+        // Keep fallbackBlogPost in case of error
+      }
+    };
+    fetchBlogPost();
+  }, [params.id]);
+
   const handleInputChange = (field: string, value: string | boolean) => {
     setBlogPost((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Tags handlers
   const handleTagChange = (index: number, value: string) => {
     const newTags = [...blogPost.tags];
     newTags[index] = value;
     setBlogPost((prev) => ({ ...prev, tags: newTags }));
   };
+
   const handleAddTag = () =>
     setBlogPost((prev) => ({ ...prev, tags: [...prev.tags, ""] }));
+
   const handleRemoveTag = (index: number) =>
     setBlogPost((prev) => ({
       ...prev,
       tags: prev.tags.filter((_, i) => i !== index),
     }));
 
-  // Image upload
-  const handleImageUpload = (e: string) => {
-    handleInputChange("image", e);
-  };
+  const handleImageUpload = (url: string) => handleInputChange("image", url);
 
-  useEffect(() => {
-    const fetchBlogPost = async () => {
-      try {
-        console.log(params.id);
-        const response = await fetch(`/api/blogs/${params.id}`);
-        const data = await response.json();
-        console.log(data);
-        if (data?.[0].blogPost) setBlogPost(data[0].blogPost);
-      } catch (err) {
-        console.error("Error fetching blog post:", err);
-      }
-    };
-    fetchBlogPost();
-  }, [blogPost.id]);
-
-  // Save changes to backend
   const handleSave = async () => {
     setIsSaving(true);
     setSaveMessage("");
     try {
-      const res = await fetch("/api/blogs", {
+      const res = await fetch(`/api/blogs/${params.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ blogPost }),
@@ -127,7 +123,6 @@ export default function BlogPostPage() {
     }
   };
 
-  // Format date nicely
   const formattedDate = new Date(blogPost.date).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -152,7 +147,7 @@ export default function BlogPostPage() {
 
       <section className="py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          {/* Title + Edit (admin only) */}
+          {/* Title + Edit */}
           <div className="flex justify-between items-center">
             <h1 className="text-3xl md:text-4xl font-bold">{blogPost.title}</h1>
             {isAdmin && (
@@ -183,7 +178,7 @@ export default function BlogPostPage() {
             <span>{blogPost.readTime}</span>
           </div>
 
-          {/* Admin Editing Mode */}
+          {/* Editing Mode */}
           {isAdmin && isEditing ? (
             <>
               <input
@@ -223,7 +218,6 @@ export default function BlogPostPage() {
                 placeholder="Read Time"
               />
 
-              {/* Image Upload */}
               <div className="aspect-video relative mb-6">
                 <img
                   src={blogPost.image}
@@ -260,7 +254,6 @@ export default function BlogPostPage() {
                 </Button>
               </div>
 
-              {/* Markdown Editor */}
               <ReactMde
                 value={blogPost.content}
                 onChange={(val) => handleInputChange("content", val)}
@@ -269,12 +262,9 @@ export default function BlogPostPage() {
                 generateMarkdownPreview={(markdown) =>
                   Promise.resolve(converter.makeHtml(markdown))
                 }
-                childProps={{
-                  writeButton: { tabIndex: -1 },
-                }}
+                childProps={{ writeButton: { tabIndex: -1 } }}
               />
 
-              {/* Save Button */}
               <div className="flex items-center gap-4 mt-4">
                 <Button onClick={handleSave} disabled={isSaving}>
                   {isSaving ? "Saving..." : "Save Changes"}
@@ -304,48 +294,7 @@ export default function BlogPostPage() {
                 ))}
               </div>
               <div className="prose max-w-full dark:prose-invert">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    h1: ({ node, ...props }) => (
-                      <h1 className="text-4xl font-bold mt-6 mb-4" {...props} />
-                    ),
-                    h2: ({ node, ...props }) => (
-                      <h2
-                        className="text-3xl font-semibold mt-6 mb-3"
-                        {...props}
-                      />
-                    ),
-                    h3: ({ node, ...props }) => (
-                      <h3
-                        className="text-2xl font-semibold mt-5 mb-2"
-                        {...props}
-                      />
-                    ),
-                    p: ({ node, ...props }) => (
-                      <p className="mb-4" {...props} />
-                    ),
-                    li: ({ node, ...props }) => (
-                      <li className="ml-6 list-disc mb-2" {...props} />
-                    ),
-                    code: ({ node, inline, className, children, ...props }) =>
-                      inline ? (
-                        <code
-                          className="bg-gray-200 text-red-600 px-1 rounded"
-                          {...props}
-                        >
-                          {children}
-                        </code>
-                      ) : (
-                        <pre
-                          className="bg-gray-900 text-gray-100 p-4 rounded overflow-auto"
-                          {...props}
-                        >
-                          <code>{children}</code>
-                        </pre>
-                      ),
-                  }}
-                >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {blogPost.content}
                 </ReactMarkdown>
               </div>

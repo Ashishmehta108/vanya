@@ -1,7 +1,10 @@
+"use client";
+
 import { createContext, useContext, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { seedData } from "@/lib/home/seed";
 import { useSession } from "../context/SessionContext";
+import { toast } from "sonner";
 
 type WorkCard = {
   _id?: string;
@@ -13,6 +16,7 @@ type WorkCard = {
 
 type HomeContent = {
   _id?: string;
+  topImage: string;
   heroSection: {
     heroTitle: string;
     heroTitleHighlight: string;
@@ -180,6 +184,7 @@ const HomePageProvider = ({ children }: { children: React.ReactNode }) => {
     };
     reader.readAsDataURL(file);
   }
+
   async function handleSave() {
     if (user?.role !== "admin") return;
     try {
@@ -195,10 +200,10 @@ const HomePageProvider = ({ children }: { children: React.ReactNode }) => {
       const data = await res.json();
       setContent(data.updated ?? data);
       setIsEditing(false);
-      alert("✅ Content saved to server");
+      toast.success("Content saved to server");
     } catch (err) {
       console.error(err);
-      alert("❌ Save failed — changes kept locally");
+      toast.error("Save failed — changes kept locally");
     } finally {
       setSaving(false);
     }
@@ -214,7 +219,7 @@ const HomePageProvider = ({ children }: { children: React.ReactNode }) => {
     const res = await fetch("/api/home");
     if (!res.ok) throw new Error("Failed to fetch homepage content");
     const data = await res.json();
-    console.log(data);
+
     setContent(data.updated ?? data);
     return data;
   };

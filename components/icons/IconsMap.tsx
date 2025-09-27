@@ -1,6 +1,6 @@
 "use client";
 
-import { ChefHat, LucideProps } from "lucide-react";
+import { Award, ChefHat, Eye, LucideProps, Target } from "lucide-react";
 import { ForwardRefExoticComponent, RefAttributes } from "react";
 import {
   Users,
@@ -27,13 +27,16 @@ const icons: Record<string, IconType> = {
   checkcircle: CheckCircle,
   save: Save,
   x: X,
+  target: Target,
+  eye: Eye,
+  award: Award,
 };
 
 export default function IconsMap({
   icon,
   ...props
 }: { icon: string } & LucideProps) {
-  console.log(icon)
+  
   const normalized = icon.replace(/([A-Z])/g, (m) => m.toLowerCase());
 
   const IconComponent = icons[normalized];

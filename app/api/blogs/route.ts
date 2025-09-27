@@ -23,13 +23,6 @@ export async function GET() {
 
 
 export async function PUT(request: Request) {
-  const token = request.headers.get("x-user-token");
-
-  const decoded = await verifyToken(token!);
-
-  if (!decoded) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
   await connectToDatabase();
 

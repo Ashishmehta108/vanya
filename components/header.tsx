@@ -1,12 +1,13 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Menu, X, Heart } from "lucide-react"
+import { useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Menu, X, Heart } from "lucide-react";
+import Image from "next/image";
 
 export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-50">
@@ -15,32 +16,58 @@ export function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-              <Heart className="w-6 h-6 text-white" />
+              <Image
+                src={
+                  "https://lh3.googleusercontent.com/a/ACg8ocKbTHXFQEmPOK9xLQbiqA94EGUz9YgS79Svrl9OLhct6cIlIug=s96-c"
+                }
+                alt="Logo"
+                width={96}
+                height={96}
+              />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-primary">Vanya Foundation</h1>
-              <p className="text-xs text-muted-foreground">Empowering Communities</p>
+              <h1 className="text-xl font-bold text-primary">
+                Himvanya Foundation
+              </h1>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link href="/" className="text-foreground hover:text-primary transition-colors">
+            <Link
+              href="/"
+              className="text-foreground hover:text-primary transition-colors"
+            >
               Home
             </Link>
-            <Link href="/about" className="text-foreground hover:text-primary transition-colors">
+            <Link
+              href="/about"
+              className="text-foreground hover:text-primary transition-colors"
+            >
               About Us
             </Link>
-            <Link href="/our-work" className="text-foreground hover:text-primary transition-colors">
+            <Link
+              href="/our-work"
+              className="text-foreground hover:text-primary transition-colors"
+            >
               Our Work
             </Link>
-            <Link href="/gallery" className="text-foreground hover:text-primary transition-colors">
+            <Link
+              href="/gallery"
+              className="text-foreground hover:text-primary transition-colors"
+            >
               Gallery
             </Link>
-            <Link href="/blog" className="text-foreground hover:text-primary transition-colors">
+            <Link
+              href="/blog"
+              className="text-foreground hover:text-primary transition-colors"
+            >
               Blog
             </Link>
-            <Link href="/contact" className="text-foreground hover:text-primary transition-colors">
+            <Link
+              href="/contact"
+              className="text-foreground hover:text-primary transition-colors"
+            >
               Contact
             </Link>
             <Button asChild className="bg-primary hover:bg-primary/90">
@@ -49,8 +76,15 @@ export function Header() {
           </nav>
 
           {/* Mobile menu button */}
-          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          <button
+            className="md:hidden"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
 
@@ -58,22 +92,40 @@ export function Header() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t">
             <nav className="flex flex-col space-y-4">
-              <Link href="/" className="text-foreground hover:text-primary transition-colors">
+              <Link
+                href="/"
+                className="text-foreground hover:text-primary transition-colors"
+              >
                 Home
               </Link>
-              <Link href="/about" className="text-foreground hover:text-primary transition-colors">
+              <Link
+                href="/about"
+                className="text-foreground hover:text-primary transition-colors"
+              >
                 About Us
               </Link>
-              <Link href="/our-work" className="text-foreground hover:text-primary transition-colors">
+              <Link
+                href="/our-work"
+                className="text-foreground hover:text-primary transition-colors"
+              >
                 Our Work
               </Link>
-              <Link href="/gallery" className="text-foreground hover:text-primary transition-colors">
+              <Link
+                href="/gallery"
+                className="text-foreground hover:text-primary transition-colors"
+              >
                 Gallery
               </Link>
-              <Link href="/blog" className="text-foreground hover:text-primary transition-colors">
+              <Link
+                href="/blog"
+                className="text-foreground hover:text-primary transition-colors"
+              >
                 Blog
               </Link>
-              <Link href="/contact" className="text-foreground hover:text-primary transition-colors">
+              <Link
+                href="/contact"
+                className="text-foreground hover:text-primary transition-colors"
+              >
                 Contact
               </Link>
               <Button asChild className="bg-primary hover:bg-primary/90 w-fit">
@@ -84,5 +136,5 @@ export function Header() {
         )}
       </div>
     </header>
-  )
+  );
 }

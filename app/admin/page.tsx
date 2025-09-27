@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "@/components/context/SessionContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,12 @@ export default function AdminLoginPage() {
   const [showKey, setShowKey] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useSession();
+  const { user } = useSession();
+  useEffect(() => {
+    if (user?.role === "admin") {
+      window.location.replace("/admin/dashboard");
+    }
+  }, [user?.role]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -14,11 +14,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  const token = req.headers.get("x-user-token");
-  const decoded = await verifyToken(token!);
-  if (!decoded) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+
   await connectToDatabase();
   const body = await req.json();
   console.log(body.storySection.storyImage);

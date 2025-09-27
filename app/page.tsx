@@ -21,9 +21,8 @@ export default function HomePageEditor() {
 
   const { user } = useSession();
   useEffect(() => {
-    console.log(user);
     setIsAdmin(user?.role == "admin");
-  }, []);
+  }, [user?.id]);
   const {
     isEditing,
     setIsEditing,
@@ -42,7 +41,7 @@ export default function HomePageEditor() {
     handleCancel,
     handleSave,
   } = useHome();
-  console.log(content);
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -74,27 +73,15 @@ export default function HomePageEditor() {
       <section className="w-screen h-screen relative">
         {isEditing ? (
           // <div></div>
-          <Image
-            src="https://www.smilefoundationindia.org/wp-content/uploads/2022/09/Banner1-scaled.jpg.webp"
-            alt="topimage"
-            fill
-            className="object-cover"
+          <UploadImage
+            value={content.topImage}
+            onChange={(value) => setContent({ ...content, topImage: value })}
           />
         ) : (
-          // <UploadImage
-          //   value={content.topImage}
-          //   onChange={(value) => updateHero("topImage", value)}
-          // />
-          // <Input
-          //   type="file"
-          //   accept="image/*"
-          //   onChange={handleImageUpload}
-          //   placeholder="Top image"
-          // />
           <Image
-            src="https://www.smilefoundationindia.org/wp-content/uploads/2022/09/Banner1-scaled.jpg.webp"
-            alt="topimage"
+            src={content.topImage}
             fill
+            alt="topimage"
             className="object-cover"
           />
         )}
@@ -335,7 +322,7 @@ export default function HomePageEditor() {
                         {(card.workCardbulletPoints?.points ?? []).map(
                           (point, i) => (
                             <li key={i} className="flex items-center">
-                              <CheckCircle2 className="w-4 h-4 text-white mr-2 fill-green-500" />
+                              <CheckCircle2 className="w-6 h-6 text-white mr-2 fill-green-500" />
                               {point}
                             </li>
                           )
@@ -358,8 +345,7 @@ export default function HomePageEditor() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="relative py-16 mb-10  text-black overflow-hidden">
+      <section className="relative py-16 mb-10 text-black overflow-hidden">
         {/* Frozen effect background */}
         <div className="absolute inset-0 bg-white/5 backdrop-blur-md pointer-events-none -z-10"></div>
 
@@ -369,13 +355,13 @@ export default function HomePageEditor() {
               <Input
                 value={content.ctaSection?.ctaTitle || ""}
                 onChange={(e) => updateCTA("ctaTitle", e.target.value)}
-                className="text-center text-2xl font-bold bg-white/10 border border-white/20 text-white placeholder:text-white/70 rounded-md shadow-sm backdrop-blur-sm transition duration-300 focus:bg-white/20"
+                className="text-center text-2xl font-bold bg-white/10 border border-gray-300 text-gray-900 placeholder-gray-500 rounded-md shadow-sm backdrop-blur-sm transition duration-300 focus:bg-white/20 focus:border-gray-400 focus:ring-1 focus:ring-gray-400"
                 placeholder="CTA title"
               />
               <Textarea
                 value={content.ctaSection?.ctaDescription || ""}
                 onChange={(e) => updateCTA("ctaDescription", e.target.value)}
-                className="text-center bg-white/10 border border-white/20 text-white placeholder:text-white/70 rounded-md shadow-sm backdrop-blur-sm transition duration-300 focus:bg-white/20"
+                className="text-center bg-white/10 border border-gray-300 text-gray-900 placeholder-gray-500 rounded-md shadow-sm backdrop-blur-sm transition duration-300 focus:bg-white/20 focus:border-gray-400 focus:ring-1 focus:ring-gray-400"
                 rows={3}
                 placeholder="CTA description"
               />
@@ -385,7 +371,7 @@ export default function HomePageEditor() {
               <h2 className="text-4xl sm:text-5xl font-extrabold mb-4 tracking-wide drop-shadow-md">
                 {content.ctaSection?.ctaTitle}
               </h2>
-              <p className="text-lg sm:text-xl opacity-90 mb-8 text-pretty drop-shadow-sm">
+              <p className="text-lg sm:text-xl opacity-90 mb-8 text-gray-800 drop-shadow-sm">
                 {content.ctaSection?.ctaDescription}
               </p>
             </>
@@ -396,7 +382,7 @@ export default function HomePageEditor() {
               asChild
               size="lg"
               variant="secondary"
-              className="bg-white/20 border border-white/30 text-black backdrop-blur-sm hover:bg-white/40 hover:text-primary transition-all duration-300 shadow-lg"
+              className="bg-white/20 border border-gray-300 text-gray-900 backdrop-blur-sm hover:bg-white/40 hover:text-primary transition-all duration-300 shadow-lg"
             >
               <Link href="/donate">Make a Donation</Link>
             </Button>
@@ -404,7 +390,7 @@ export default function HomePageEditor() {
               asChild
               size="lg"
               variant="outline"
-              className="border-white/40 text-black bg-white/10 backdrop-blur-sm hover:bg-white/30 hover:text-primary transition-all duration-300 shadow-md"
+              className="border-gray-400 text-gray-900 bg-white/10 backdrop-blur-sm hover:bg-white/30 hover:text-primary transition-all duration-300 shadow-md"
             >
               <Link href="/volunteer">Become a Volunteer</Link>
             </Button>

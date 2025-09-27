@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { v4 as uuidv4 } from "uuid";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -67,6 +68,7 @@ export default function VolunteerPage() {
       toast.error("You must accept the terms and conditions");
       return;
     }
+    formData.id = uuidv4();
     setLoading(true);
     try {
       const res = await fetch("/api/volunteer", {
