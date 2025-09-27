@@ -1,10 +1,12 @@
 import { HomePageContentPlain } from "./types";
 
 export const seedData: HomePageContentPlain = {
+  topImage: "https://cdn.sanity.io/images/.../example.svg",
   heroSection: {
     heroTitle: "Empowering Communities",
-    heroTitleHighlight:
-      "Join Vanya Foundation in our mission to create lasting change...",
+    heroTitleHighlight: " Transforming Lives",
+    heroDescription:
+      "Join Vanya Foundation in our mission to create lasting change through education, healthcare, and community development programs across India.",
     heroImage: "https://cdn.sanity.io/images/.../example.svg",
   },
   workSection: {
@@ -13,6 +15,7 @@ export const seedData: HomePageContentPlain = {
       "We focus on sustainable development through comprehensive programs",
     workCard: [
       {
+        icon: "GraduationCap",
         WorkcardTitle: "Education",
         WorkcardDescription:
           "Providing quality education, scholarships, and learning resources.",
@@ -25,6 +28,7 @@ export const seedData: HomePageContentPlain = {
         },
       },
       {
+        icon: "Stethoscope",
         WorkcardTitle: "Healthcare",
         WorkcardDescription: "Ensuring access to quality healthcare services.",
         workCardbulletPoints: {
@@ -36,6 +40,7 @@ export const seedData: HomePageContentPlain = {
         },
       },
       {
+        icon: "Users",
         WorkcardTitle: "Community Development",
         WorkcardDescription:
           "Building sustainable communities through empowerment programs.",

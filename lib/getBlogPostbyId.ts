@@ -6,7 +6,7 @@ export default async function getBlogPostById(id: string) {
   try {
     await connectToDatabase();
     const blogPost = await BlogPost.find({
-      id: "665a6377-85ac-4fba-8571-feb9817dabca",
+      id: id,
     });
     console.log(blogPost);
     if (!blogPost) {

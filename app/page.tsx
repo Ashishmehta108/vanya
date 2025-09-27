@@ -7,46 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, X, Plus, Trash, ArrowRight, CheckCircle } from "lucide-react";
+import { Save, X, Plus, Trash, ArrowRight, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useHome } from "@/components/home/home.provider";
-
-// const EMPTY_CONTENT: HomeContent = {
-//   heroSection: {
-//     heroTitle: "Empowering Communities",
-//     heroTitleHighlight: "Join Vanya Foundation in our mission",
-//     heroImage: "",
-//     heroDescription:
-//       "Join Vanya Foundation in our mission to create lasting change through education, healthcare, and community development programs.",
-//   },
-//   workSection: {
-//     ourWorkTitle: "Our Work",
-//     ourWorkDescription:
-//       "We focus on sustainable development through comprehensive programs",
-//     workCard: [
-//       {
-//         WorkcardTitle: "Education",
-//         WorkcardDescription:
-//           "Providing quality education, scholarships, and learning resources.",
-//         workCardbulletPoints: {
-//           points: [
-//             "School infrastructure development",
-//             "Teacher training",
-//             "Scholarships",
-//           ],
-//         },
-//       },
-//     ],
-//   },
-//   ctaSection: {
-//     ctaTitle: "Join Us in Making a Difference",
-//     ctaDescription:
-//       "Your support can transform lives and build stronger communities.",
-//   },
-// };
+import IconsMap from "@/components/icons/IconsMap";
+import WorkCardIconSelect from "@/components/icon-select";
+import Image from "next/image";
+import UploadImage from "@/components/UploadImage";
+import { useSession } from "@/components/context/SessionContext";
 
 export default function HomePageEditor() {
-  const [isAdmin, setIsAdmin] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const { user } = useSession();
+  useEffect(() => {
+    console.log(user);
+    setIsAdmin(user?.role == "admin");
+  }, []);
   const {
     isEditing,
     setIsEditing,
@@ -58,7 +35,6 @@ export default function HomePageEditor() {
     removeWorkCard,
     updateHero,
     updateCTA,
-    setSaving,
     saving,
     content,
     setContent,
@@ -66,13 +42,13 @@ export default function HomePageEditor() {
     handleCancel,
     handleSave,
   } = useHome();
-
+  console.log(content);
   return (
     <div className="min-h-screen">
       <Header />
 
       {isAdmin && (
-        <div className="fixed top-4 right-4 z-50 flex gap-2">
+        <div className="fixed top-18 right-4 z-50 flex gap-2">
           {!isEditing ? (
             <Button onClick={() => setIsEditing(true)} className="bg-primary">
               Edit Page
@@ -94,6 +70,35 @@ export default function HomePageEditor() {
           )}
         </div>
       )}
+
+      <section className="w-screen h-screen relative">
+        {isEditing ? (
+          // <div></div>
+          <Image
+            src="https://www.smilefoundationindia.org/wp-content/uploads/2022/09/Banner1-scaled.jpg.webp"
+            alt="topimage"
+            fill
+            className="object-cover"
+          />
+        ) : (
+          // <UploadImage
+          //   value={content.topImage}
+          //   onChange={(value) => updateHero("topImage", value)}
+          // />
+          // <Input
+          //   type="file"
+          //   accept="image/*"
+          //   onChange={handleImageUpload}
+          //   placeholder="Top image"
+          // />
+          <Image
+            src="https://www.smilefoundationindia.org/wp-content/uploads/2022/09/Banner1-scaled.jpg.webp"
+            alt="topimage"
+            fill
+            className="object-cover"
+          />
+        )}
+      </section>
 
       {/* Hero */}
       <section className="relative bg-gradient-to-r from-primary/10 to-primary/5 py-20">
@@ -262,6 +267,14 @@ export default function HomePageEditor() {
                           <Trash />
                         </button>
                       </div>
+
+                      <WorkCardIconSelect
+                        value={card.icon}
+                        onChange={(value) =>
+                          updateWorkCard(idx, { icon: value })
+                        }
+                      />
+
                       <Textarea
                         value={card.WorkcardDescription}
                         onChange={(e) =>
@@ -307,7 +320,10 @@ export default function HomePageEditor() {
                   ) : (
                     <>
                       <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                        <CheckCircle className="w-6 h-6 text-primary" />
+                        <IconsMap
+                          icon={card.icon}
+                          className="w-6 h-6 text-primary"
+                        />
                       </div>
                       <h3 className="text-xl font-semibold mb-3">
                         {card.WorkcardTitle}
@@ -319,7 +335,7 @@ export default function HomePageEditor() {
                         {(card.workCardbulletPoints?.points ?? []).map(
                           (point, i) => (
                             <li key={i} className="flex items-center">
-                              <CheckCircle className="w-4 h-4 text-primary mr-2" />
+                              <CheckCircle2 className="w-4 h-4 text-white mr-2 fill-green-500" />
                               {point}
                             </li>
                           )
@@ -343,44 +359,52 @@ export default function HomePageEditor() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-primary text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="relative py-16 mb-10  text-black overflow-hidden">
+        {/* Frozen effect background */}
+        <div className="absolute inset-0 bg-white/5 backdrop-blur-md pointer-events-none -z-10"></div>
+
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           {isEditing ? (
             <div className="space-y-4 mb-8">
               <Input
                 value={content.ctaSection?.ctaTitle || ""}
                 onChange={(e) => updateCTA("ctaTitle", e.target.value)}
-                className="text-center text-2xl font-bold bg-white/10 border-white/20 text-white placeholder:text-white/70"
+                className="text-center text-2xl font-bold bg-white/10 border border-white/20 text-white placeholder:text-white/70 rounded-md shadow-sm backdrop-blur-sm transition duration-300 focus:bg-white/20"
                 placeholder="CTA title"
               />
               <Textarea
                 value={content.ctaSection?.ctaDescription || ""}
                 onChange={(e) => updateCTA("ctaDescription", e.target.value)}
-                className="text-center bg-white/10 border-white/20 text-white placeholder:text-white/70"
+                className="text-center bg-white/10 border border-white/20 text-white placeholder:text-white/70 rounded-md shadow-sm backdrop-blur-sm transition duration-300 focus:bg-white/20"
                 rows={3}
                 placeholder="CTA description"
               />
             </div>
           ) : (
             <>
-              <h2 className="text-3xl font-bold mb-4">
+              <h2 className="text-4xl sm:text-5xl font-extrabold mb-4 tracking-wide drop-shadow-md">
                 {content.ctaSection?.ctaTitle}
               </h2>
-              <p className="text-lg opacity-90 mb-8 text-pretty">
+              <p className="text-lg sm:text-xl opacity-90 mb-8 text-pretty drop-shadow-sm">
                 {content.ctaSection?.ctaDescription}
               </p>
             </>
           )}
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" variant="secondary">
+            <Button
+              asChild
+              size="lg"
+              variant="secondary"
+              className="bg-white/20 border border-white/30 text-black backdrop-blur-sm hover:bg-white/40 hover:text-primary transition-all duration-300 shadow-lg"
+            >
               <Link href="/donate">Make a Donation</Link>
             </Button>
             <Button
               asChild
               size="lg"
               variant="outline"
-              className="border-white text-white hover:bg-white hover:text-primary bg-transparent"
+              className="border-white/40 text-black bg-white/10 backdrop-blur-sm hover:bg-white/30 hover:text-primary transition-all duration-300 shadow-md"
             >
               <Link href="/volunteer">Become a Volunteer</Link>
             </Button>

@@ -35,21 +35,25 @@ Vanya Foundation team and volunteers`,
       "These core principles guide everything we do and shape our approach to community development",
     valuesList: [
       {
+        icon: "Award",
         valueHeading: "Integrity",
         valueDescription:
           "We maintain the highest standards of honesty and transparency in all our operations and communications.",
       },
       {
+        icon: "Users",
         valueHeading: "Community Focus",
         valueDescription:
           "We prioritize community needs and ensure local participation in all our development programs.",
       },
       {
+        icon: "Heart",
         valueHeading: "Impact",
         valueDescription:
           "We focus on creating measurable, sustainable change that improves lives and strengthens communities.",
       },
       {
+        icon: "Lightbulb",
         valueHeading: "Innovation",
         valueDescription:
           "We embrace creative solutions and modern approaches to address traditional challenges effectively.",

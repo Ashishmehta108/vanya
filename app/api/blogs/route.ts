@@ -1,6 +1,7 @@
 import { Blog } from "@/lib/blog/blog";
 import { BlogPost } from "@/lib/blog/blogpost/blogpost";
 import BlogSeed from "@/lib/blog/seed";
+import { verifyToken } from "@/lib/jwt/jwt";
 import { connectToDatabase } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 
@@ -19,44 +20,33 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
-  await connectToDatabase();
 
-  // const body = await request.json();
-
-  const newBlog = await Blog.create(BlogSeed);
-  BlogSeed.blogPosts.forEach(async (post) => {
-    await BlogPost.create(post);
-  });
-  // const BlogPosts=await BlogPost.create(body);
-  try {
-    return NextResponse.json({
-      message: "Blog created successfully",
-      newBlog,
-    });
-  } catch (error) {
-    console.error("Error creating blog:", error);
-    return NextResponse.json(
-      { error: "Failed to create blog" },
-      { status: 500 }
-    );
-  }
-}
 
 export async function PUT(request: Request) {
+  const token = request.headers.get("x-user-token");
+
+  const decoded = await verifyToken(token!);
+
+  if (!decoded) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   await connectToDatabase();
 
   const body = await request.json();
+  console.log(body)
+  const updateBlogs = await Blog.updateOne({ $set: body })
+  const updateBlogPosts = await BlogPost.updateMany(
+    {},
+    { $set: body.blogPosts }
+  )
 
-  const updatedBlog = await Blog.findByIdAndUpdate(
-    body.id,
-    { $set: body },
-    { new: true }
-  );
+  console.log(updateBlogs)
   try {
     return NextResponse.json({
       message: "Blog updated successfully",
-      updatedBlog,
+      updateBlogs,
+      updateBlogPosts,
     });
   } catch (error) {
     console.error("Error updating blog:", error);

@@ -1,31 +1,53 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifyJwt } from "@/lib/auth";
+import { verifyToken } from "@/lib/jwt/jwt";
 
-export function middleware(req: NextRequest) {
-    if (req.nextUrl.pathname.startsWith("/api/secure")) {
-        const authHeader = req.headers.get("authorization");
-        const token = authHeader?.split(" ")[1];
+export async function middleware(req: NextRequest) {
+    const { pathname } = req.nextUrl;
+
+    if (
+        pathname.startsWith("/api/auth") ||
+        pathname.startsWith("/api/payment") ||
+        pathname.startsWith("/_next") ||
+        pathname.startsWith("/favicon") ||
+        pathname.startsWith("/public")
+    ) {
+        return NextResponse.next();
+    }
+
+    const isAdminPage = pathname.startsWith("/admin");
+    const isAdminApi = pathname.startsWith("/api/admin");
+    const isLoginPage = pathname === "/admin";
+
+    if ((isAdminPage || isAdminApi) && !isLoginPage) {
+        const token = req.cookies.get("token")?.value;
 
         if (!token) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.redirect(new URL("/admin", req.url));
         }
 
-        const decoded = verifyJwt(token);
-        if (!decoded) {
-            return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+        try {
+            const decoded = await verifyToken(token);
+            if (!decoded) {
+                return NextResponse.redirect(new URL("/admin", req.url));
+            }
+            if (decoded.role !== "admin") {
+                return NextResponse.json({ error: "Forbidden: not admin" }, { status: 403 });
+            }
+
+            const requestHeaders = new Headers(req.headers);
+            requestHeaders.set("x-user-id", decoded.id);
+            requestHeaders.set("x-user-role", decoded.role);
+
+            return NextResponse.next({ request: { headers: requestHeaders } });
+        } catch {
+            return NextResponse.redirect(new URL("/admin", req.url));
         }
-
-        const requestHeaders = new Headers(req.headers);
-        requestHeaders.set("x-user", JSON.stringify(decoded));
-
-        return NextResponse.next({ request: { headers: requestHeaders } });
     }
 
     return NextResponse.next();
 }
 
-
 export const config = {
-    matcher: ["/api/secure/:path*"], // only secure these routes
+    matcher: ["/admin/:path*"],
 };

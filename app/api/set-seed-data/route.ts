@@ -14,6 +14,7 @@ export async function PATCH(req: NextRequest, res: NextResponse) {
     const body: PartialHomePageContent | HomePageContentPlain =
       await req.json();
 
+    console.log(body)
     const updated = await HomePageContentModel.findOneAndUpdate(
       {},
       { $set: body },

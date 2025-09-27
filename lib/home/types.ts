@@ -1,13 +1,16 @@
 export type HomePageContentPlain = {
+  topImage: string;
   heroSection: {
     heroTitle: string;
     heroTitleHighlight: string;
     heroImage: string;
+    heroDescription: string;
   };
   workSection: {
     ourWorkTitle: string;
     ourWorkDescription: string;
     workCard: {
+      icon: string;
       WorkcardTitle: string;
       WorkcardDescription: string;
       workCardbulletPoints: {
@@ -30,4 +33,3 @@ export type PartialHomePageContent = Partial<{
   };
   ctaSection: Partial<HomePageContentPlain["ctaSection"]>;
 }>;
-

@@ -1,20 +1,34 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, X, Plus, Trash, Upload, CheckCircle } from "lucide-react";
+import {
+  Save,
+  X,
+  Plus,
+  Trash,
+  Upload,
+  CheckCircle,
+  Minus,
+  Trash2,
+  CheckCircle2,
+} from "lucide-react";
 import Link from "next/link";
 import { useWork } from "@/components/work/work.provider";
-
-
+import UploadImage from "@/components/UploadImage";
+import { useSession } from "@/components/context/SessionContext";
 
 export default function OurWorkPageEditor() {
-  const [isAdmin, setIsAdmin] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const { user } = useSession();
+
+  useEffect(() => setIsAdmin(user?.role === "admin"), [user]);
 
   const {
     isEditing,
@@ -45,7 +59,7 @@ export default function OurWorkPageEditor() {
 
       {/* Admin Controls */}
       {isAdmin && (
-        <div className="fixed top-4 right-4 z-50 flex gap-2">
+        <div className="fixed top-18 right-4 z-50 flex gap-2">
           {!isEditing ? (
             <Button onClick={() => setIsEditing(true)} className="bg-primary">
               Edit Page
@@ -86,10 +100,9 @@ export default function OurWorkPageEditor() {
                 rows={3}
                 placeholder="Hero description"
               />
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e, "heroImage")}
+              <UploadImage
+                value={content.workHeroSection?.workHeroImage || ""}
+                onChange={(e) => handleImageUpload(e, "workHeroImage")}
               />
             </div>
           ) : (
@@ -113,13 +126,28 @@ export default function OurWorkPageEditor() {
               <div className="aspect-video">
                 {isEditing ? (
                   <>
-                    <Input
+                    <div className="w-full flex justify-end">
+                      <Button
+                        variant={"destructive"}
+                        className="relative top-0 right-5 flex items-center"
+                        onClick={() => removeWorkCard(idx)}
+                      >
+                        <Trash2 className="w-4 h-4 " />
+                      </Button>
+                    </div>
+                    <UploadImage
+                      value={card.workMainImage}
+                      onChange={(e) =>
+                        handleImageUpload(e, "workMainImage", idx)
+                      }
+                    />
+                    {/* <Input
                       type="file"
                       accept="image/*"
                       onChange={(e) =>
                         handleImageUpload(e, "workMainImage", idx)
                       }
-                    />
+                    /> */}
                     {card.workMainImage && (
                       <img
                         src={card.workMainImage}
@@ -197,7 +225,7 @@ export default function OurWorkPageEditor() {
                     <ul className="space-y-1 text-sm">
                       {card.bulletPoints?.map((point, bi) => (
                         <li key={bi} className="flex items-center">
-                          <CheckCircle className="w-4 h-4 mr-2 text-primary" />
+                          <CheckCircle2 className="w-6 h-6 mr-2 text-white fill-green-500" />
                           {point}
                         </li>
                       ))}
@@ -214,14 +242,16 @@ export default function OurWorkPageEditor() {
           ))}
 
           {isEditing && (
-            <Button onClick={addWorkCard} className="md:col-span-2">
+            <Button
+              onClick={addWorkCard}
+              className="md:col-span-2 max-w-md mx-auto"
+            >
               <Plus className="w-4 h-4 mr-2" /> Add Work Card
             </Button>
           )}
         </div>
       </section>
 
-      {/* Initiatives Section */}
       <section className="py-16 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-8">
@@ -288,19 +318,19 @@ export default function OurWorkPageEditor() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-primary text-white text-center">
+      <section className="py-16 bg-white text-black text-center shadow-inner">
         {isEditing ? (
           <div className="space-y-4 mb-8">
             <Input
               value={content.ctaSection?.ctaTitle || ""}
               onChange={(e) => updateCTA("ctaTitle", e.target.value)}
-              className="text-2xl font-bold bg-white/10 border-white/20 text-white"
+              className="text-2xl font-bold bg-gray-100 border-gray-300 text-black shadow-inner placeholder-black/50"
               placeholder="CTA title"
             />
             <Textarea
               value={content.ctaSection?.ctaDescription || ""}
               onChange={(e) => updateCTA("ctaDescription", e.target.value)}
-              className="bg-white/10 border-white/20 text-white"
+              className="bg-gray-100 border-gray-300 text-black shadow-inner placeholder-black/50"
               rows={3}
               placeholder="CTA description"
             />
@@ -316,15 +346,19 @@ export default function OurWorkPageEditor() {
           </>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button asChild size="lg" variant="secondary">
-            <Link href="/donate">Make a Donation</Link>
-          </Button>
+        <div className="flex flex-row gap-4 justify-center">
           <Button
             asChild
             size="lg"
-            variant="outline"
-            className="border-white text-white hover:bg-white hover:text-primary"
+            className="bg-white text-black border-[1px] border-neutral-300 px-8 py-3 rounded-lg shadow-inner hover:shadow-lg hover:bg-gray-100 transition-all duration-200"
+          >
+            <Link href="/donate">Make a Donation</Link>
+          </Button>
+
+          <Button
+            asChild
+            size="lg"
+            className="bg-white text-black border-[1px] border-neutral-300 px-8 py-3 rounded-lg shadow-inner hover:shadow-lg hover:bg-gray-100 transition-all duration-200"
           >
             <Link href="/volunteer">Volunteer With Us</Link>
           </Button>

@@ -1,117 +1,145 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, Heart, DollarSign, UserCheck, Mail, Settings, LogOut, Download, Eye, Edit } from "lucide-react"
-
-// Mock data - in real app, this would come from your database
-const mockDonations = [
-  { id: "DON001", donor: "Rajesh Kumar", amount: 5000, purpose: "Education", date: "2024-01-15", status: "Completed" },
-  { id: "DON002", donor: "Priya Sharma", amount: 2500, purpose: "Healthcare", date: "2024-01-14", status: "Completed" },
-  {
-    id: "DON003",
-    donor: "Amit Patel",
-    amount: 10000,
-    purpose: "General Fund",
-    date: "2024-01-13",
-    status: "Completed",
-  },
-  {
-    id: "DON004",
-    donor: "Sunita Gupta",
-    amount: 1000,
-    purpose: "Community Development",
-    date: "2024-01-12",
-    status: "Pending",
-  },
-  { id: "DON005", donor: "Vikram Singh", amount: 7500, purpose: "Education", date: "2024-01-11", status: "Completed" },
-]
-
-const mockVolunteers = [
-  {
-    id: "VOL001",
-    name: "Anita Desai",
-    email: "anita@email.com",
-    phone: "+91 98765 43210",
-    area: "Education",
-    status: "Active",
-    joinDate: "2024-01-10",
-  },
-  {
-    id: "VOL002",
-    name: "Rohit Mehta",
-    email: "rohit@email.com",
-    phone: "+91 98765 43211",
-    area: "Healthcare",
-    status: "Active",
-    joinDate: "2024-01-08",
-  },
-  {
-    id: "VOL003",
-    name: "Kavya Nair",
-    email: "kavya@email.com",
-    phone: "+91 98765 43212",
-    area: "Community Development",
-    status: "Pending",
-    joinDate: "2024-01-07",
-  },
-  {
-    id: "VOL004",
-    name: "Arjun Reddy",
-    email: "arjun@email.com",
-    phone: "+91 98765 43213",
-    area: "Event Organization",
-    status: "Active",
-    joinDate: "2024-01-05",
-  },
-]
+"use client";
+import React from "react";
+import { useEffect, useState } from "react";
+import {
+  Users,
+  Heart,
+  DollarSign,
+  UserCheck,
+  Mail,
+  Settings,
+  LogOut,
+  Download,
+  Eye,
+  Edit,
+  MoreHorizontal,
+} from "lucide-react";
+import { useSession } from "@/components/context/SessionContext";
+import { useRouter } from "next/navigation";
 
 export default function AdminDashboard() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, logout, loading } = useSession();
+  const router = useRouter();
+  const [donations, setDonations] = useState<any[]>([]);
+  const [volunteers, setVolunteers] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
 
+  const [activeTab, setActiveTab] = useState("donations");
   useEffect(() => {
-    // Check authentication
-    const authStatus = localStorage.getItem("vanya_admin_auth")
-    if (authStatus === "true") {
-      setIsAuthenticated(true)
-    } else {
-      window.location.href = "/admin"
+    if (!loading) {
+      if (user?.id) {
+        setIsAuthenticated(true);
+        fetchData();
+      } else {
+        setIsAuthenticated(false);
+        router.push("/admin");
+      }
     }
-  }, [])
+  }, [user, loading]);
+
+  const fetchData = async () => {
+    try {
+      const [donRes, volRes, msgRes] = await Promise.all([
+        fetch("/api/donations"),
+        fetch("/api/volunteer"),
+        fetch("/api/contact/submission"),
+      ]);
+      const donationsData = await donRes.json();
+      const volunteersData = await volRes.json();
+      const messagesData = await msgRes.json();
+
+      setDonations(donationsData || []);
+      setVolunteers(volunteersData.volunteers || []);
+      setMessages(messagesData.submissions || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
 
   const handleLogout = () => {
-    localStorage.removeItem("vanya_admin_auth")
-    window.location.href = "/admin"
-  }
+    logout();
+  };
 
-  if (!isAuthenticated) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  }
+  const totalDonations = donations.reduce((sum, d) => sum + d.amount, 0);
+  const completedDonations = donations.filter(
+    (d) => d.status === "Completed"
+  ).length;
+  const activeVolunteers = volunteers.filter(
+    (v) => v.status === "Active"
+  ).length;
+  const pendingVolunteers = volunteers.filter(
+    (v) => v.status === "Pending"
+  ).length;
 
-  const totalDonations = mockDonations.reduce((sum, donation) => sum + donation.amount, 0)
-  const completedDonations = mockDonations.filter((d) => d.status === "Completed").length
-  const activeVolunteers = mockVolunteers.filter((v) => v.status === "Active").length
-  const pendingVolunteers = mockVolunteers.filter((v) => v.status === "Pending").length
+  const Badge = ({ children, variant = "default", className = "" }) => (
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+        variant === "default"
+          ? "bg-slate-100 text-slate-700"
+          : "bg-slate-50 text-slate-600"
+      } ${className}`}
+    >
+      {children}
+    </span>
+  );
+
+  const Button = ({
+    children,
+    onClick = () => {},
+    variant = "default",
+    size = "default",
+    className = "",
+  }) => {
+    const baseClasses =
+      "inline-flex items-center justify-center font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2";
+    const variantClasses = {
+      default: "bg-slate-900 text-white hover:bg-slate-800",
+      outline:
+        "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+      ghost: "text-slate-600 hover:text-slate-900 hover:bg-slate-100",
+    };
+    const sizeClasses = {
+      sm: "h-8 px-3 text-sm",
+      default: "h-10 px-4",
+    };
+
+    return (
+      <button
+        onClick={onClick}
+        className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      >
+        {children}
+      </button>
+    );
+  };
+
+  if (!isAuthenticated || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-slate-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="bg-white border-b">
+      <header className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div>
-              <h1 className="text-xl font-bold text-primary">Vanya Foundation</h1>
-              <p className="text-sm text-muted-foreground">Admin Dashboard</p>
+              <h1 className="text-xl font-semibold text-slate-900">
+                Vanya Foundation
+              </h1>
+              <p className="text-sm text-slate-500">Admin Dashboard</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm">
+            <div className="flex items-center space-x-3">
+              <Button variant="ghost" size="sm">
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </Button>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </Button>
@@ -123,270 +151,490 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
+          <div className="bg-white border border-slate-200 shadow-inner rounded-lg">
+            <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Donations</p>
-                  <p className="text-2xl font-bold text-primary">₹{totalDonations.toLocaleString()}</p>
+                  <p className="text-sm font-medium text-slate-500 mb-1">
+                    Total Donations
+                  </p>
+                  <p className="text-2xl font-semibold text-slate-900">
+                    ₹{totalDonations.toLocaleString()}
+                  </p>
                 </div>
-                <DollarSign className="w-8 h-8 text-primary" />
+                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-slate-600" />
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardContent className="p-6">
+          <div className="bg-white border border-slate-200 shadow-inner rounded-lg">
+            <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Completed Donations</p>
-                  <p className="text-2xl font-bold text-green-600">{completedDonations}</p>
+                  <p className="text-sm font-medium text-slate-500 mb-1">
+                    Completed Donations
+                  </p>
+                  <p className="text-2xl font-semibold text-slate-900">
+                    {completedDonations}
+                  </p>
                 </div>
-                <Heart className="w-8 h-8 text-green-600" />
+                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
+                  <Heart className="w-6 h-6 text-slate-600" />
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardContent className="p-6">
+          <div className="bg-white border border-slate-200 shadow-inner rounded-lg">
+            <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Active Volunteers</p>
-                  <p className="text-2xl font-bold text-blue-600">{activeVolunteers}</p>
+                  <p className="text-sm font-medium text-slate-500 mb-1">
+                    Active Volunteers
+                  </p>
+                  <p className="text-2xl font-semibold text-slate-900">
+                    {activeVolunteers}
+                  </p>
                 </div>
-                <UserCheck className="w-8 h-8 text-blue-600" />
+                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
+                  <UserCheck className="w-6 h-6 text-slate-600" />
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardContent className="p-6">
+          <div className="bg-white border border-slate-200 shadow-inner rounded-lg">
+            <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Pending Applications</p>
-                  <p className="text-2xl font-bold text-orange-600">{pendingVolunteers}</p>
+                  <p className="text-sm font-medium text-slate-500 mb-1">
+                    Pending Applications
+                  </p>
+                  <p className="text-2xl font-semibold text-slate-900">
+                    {pendingVolunteers}
+                  </p>
                 </div>
-                <Users className="w-8 h-8 text-orange-600" />
+                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
+                  <Users className="w-6 h-6 text-slate-600" />
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
-        {/* Main Content */}
-        <Tabs defaultValue="donations" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="donations">Donations</TabsTrigger>
-            <TabsTrigger value="volunteers">Volunteers</TabsTrigger>
-            <TabsTrigger value="content">Content</TabsTrigger>
-          </TabsList>
+        {/* Tabs */}
+        <div className="space-y-6">
+          <div className="bg-white border border-slate-200 shadow-inner rounded-lg p-1">
+            <div className="flex space-x-1">
+              {[
+                { id: "donations", label: "Donations" },
+                { id: "volunteers", label: "Volunteers" },
+                { id: "messages", label: "Messages" },
+                { id: "content", label: "Content" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    activeTab === tab.id
+                      ? "bg-slate-100 text-slate-900"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Donations Tab */}
-          <TabsContent value="donations">
-            <Card>
-              <CardHeader>
+          {activeTab === "donations" && (
+            <div className="bg-white border border-slate-200 shadow-inner rounded-lg">
+              <div className="border-b border-slate-100 px-6 py-4">
                 <div className="flex justify-between items-center">
-                  <CardTitle>Recent Donations</CardTitle>
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    Recent Donations
+                  </h3>
                   <Button variant="outline" size="sm">
                     <Download className="w-4 h-4 mr-2" />
                     Export
                   </Button>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-2">ID</th>
-                        <th className="text-left p-2">Donor</th>
-                        <th className="text-left p-2">Amount</th>
-                        <th className="text-left p-2">Purpose</th>
-                        <th className="text-left p-2">Date</th>
-                        <th className="text-left p-2">Status</th>
-                        <th className="text-left p-2">Actions</th>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        ID
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Donor
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Purpose
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {donations.map((donation) => (
+                      <tr
+                        key={donation.id}
+                        className="hover:bg-slate-50 transition-colors"
+                      >
+                        <td className="p-4 font-mono text-sm text-slate-600">
+                          {donation.id}
+                        </td>
+                        <td className="p-4 text-sm text-slate-900">
+                          {donation.donor}
+                        </td>
+                        <td className="p-4 text-sm font-medium text-slate-900">
+                          ₹{donation.amount.toLocaleString()}
+                        </td>
+                        <td className="p-4 text-sm text-slate-600">
+                          {donation.purpose}
+                        </td>
+                        <td className="p-4 text-sm text-slate-600">
+                          {donation.date}
+                        </td>
+                        <td className="p-4">
+                          <Badge
+                            variant={
+                              donation.status === "Completed"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
+                            {donation.status}
+                          </Badge>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex space-x-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Mail className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {mockDonations.map((donation) => (
-                        <tr key={donation.id} className="border-b">
-                          <td className="p-2 font-mono text-sm">{donation.id}</td>
-                          <td className="p-2">{donation.donor}</td>
-                          <td className="p-2 font-semibold">₹{donation.amount.toLocaleString()}</td>
-                          <td className="p-2">{donation.purpose}</td>
-                          <td className="p-2">{donation.date}</td>
-                          <td className="p-2">
-                            <Badge variant={donation.status === "Completed" ? "default" : "secondary"}>
-                              {donation.status}
-                            </Badge>
-                          </td>
-                          <td className="p-2">
-                            <div className="flex space-x-1">
-                              <Button variant="ghost" size="sm">
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Mail className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    ))}
+                    {donations.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="p-8 text-center text-slate-500"
+                        >
+                          No donations found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Volunteers Tab */}
-          <TabsContent value="volunteers">
-            <Card>
-              <CardHeader>
+          {activeTab === "volunteers" && (
+            <div className="bg-white border border-slate-200 shadow-inner rounded-lg">
+              <div className="border-b border-slate-100 px-6 py-4">
                 <div className="flex justify-between items-center">
-                  <CardTitle>Volunteer Applications</CardTitle>
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    Volunteer Applications
+                  </h3>
                   <Button variant="outline" size="sm">
                     <Download className="w-4 h-4 mr-2" />
                     Export
                   </Button>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-2">ID</th>
-                        <th className="text-left p-2">Name</th>
-                        <th className="text-left p-2">Email</th>
-                        <th className="text-left p-2">Phone</th>
-                        <th className="text-left p-2">Area</th>
-                        <th className="text-left p-2">Status</th>
-                        <th className="text-left p-2">Join Date</th>
-                        <th className="text-left p-2">Actions</th>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        ID
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Phone
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Area
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Join Date
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {volunteers.map((v) => (
+                      <tr
+                        key={v.id}
+                        className="hover:bg-slate-50 transition-colors"
+                      >
+                        <td className="p-4 font-mono text-sm text-slate-600">
+                          {v.id}
+                        </td>
+                        <td className="p-4 text-sm text-slate-900">
+                          {v.firstName} {v.lastName}
+                        </td>
+                        <td className="p-4 text-sm text-slate-600">
+                          {v.email}
+                        </td>
+                        <td className="p-4 text-sm text-slate-600">
+                          {v.phone}
+                        </td>
+                        <td className="p-4 text-sm text-slate-600">
+                          {v.areasOfInterest?.join(", ")}
+                        </td>
+                        <td className="p-4">
+                          <Badge
+                            variant={
+                              v.status === "Active" ? "default" : "secondary"
+                            }
+                          >
+                            {v.status}
+                          </Badge>
+                        </td>
+                        <td className="p-4 text-sm text-slate-600">
+                          {new Date(v.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="p-4">
+                          <div className="flex space-x-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {mockVolunteers.map((volunteer) => (
-                        <tr key={volunteer.id} className="border-b">
-                          <td className="p-2 font-mono text-sm">{volunteer.id}</td>
-                          <td className="p-2">{volunteer.name}</td>
-                          <td className="p-2">{volunteer.email}</td>
-                          <td className="p-2">{volunteer.phone}</td>
-                          <td className="p-2">{volunteer.area}</td>
-                          <td className="p-2">
-                            <Badge variant={volunteer.status === "Active" ? "default" : "secondary"}>
-                              {volunteer.status}
-                            </Badge>
-                          </td>
-                          <td className="p-2">{volunteer.joinDate}</td>
-                          <td className="p-2">
-                            <div className="flex space-x-1">
-                              <Button variant="ghost" size="sm">
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Mail className="w-4 h-4" />
-                              </Button>
-                              {volunteer.status === "Pending" && (
-                                <Button variant="ghost" size="sm" className="text-green-600">
-                                  <UserCheck className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    ))}
+                    {volunteers.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={8}
+                          className="p-8 text-center text-slate-500"
+                        >
+                          No volunteer applications found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Messages Tab */}
+          {activeTab === "messages" && (
+            <div className="bg-white border border-slate-200 shadow-inner rounded-lg">
+              <div className="border-b border-slate-100 px-6 py-4">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Contact Messages
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Phone
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Subject
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Message
+                      </th>
+                      <th className="p-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {messages.map((msg) => (
+                      <tr
+                        key={msg._id}
+                        className="hover:bg-slate-50 transition-colors"
+                      >
+                        <td className="p-4 text-sm text-slate-900">
+                          {msg.firstName} {msg.lastName}
+                        </td>
+                        <td className="p-4 text-sm text-slate-600">
+                          {msg.email}
+                        </td>
+                        <td className="p-4 text-sm text-slate-600">
+                          {msg.phone}
+                        </td>
+                        <td className="p-4 text-sm text-slate-900">
+                          {msg.subject}
+                        </td>
+                        <td className="p-4 text-sm text-slate-600 max-w-xs truncate">
+                          {msg.message}
+                        </td>
+                        <td className="p-4 text-sm text-slate-600">
+                          {new Date(msg.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                    {messages.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="p-8 text-center text-slate-500"
+                        >
+                          No messages found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Content Management Tab */}
-          <TabsContent value="content">
+          {activeTab === "content" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Website Pages</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center p-3 border rounded hover:bg-muted/50 transition-colors">
-                    <span>Homepage</span>
-                    <Button variant="ghost" size="sm" onClick={() => window.open("/?admin=VANYA_ADMIN_2024", "_blank")}>
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Homepage
-                    </Button>
-                  </div>
-                  <div className="flex justify-between items-center p-3 border rounded hover:bg-muted/50 transition-colors">
-                    <span>About Us</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => window.open("/about?admin=VANYA_ADMIN_2024", "_blank")}
+              <div className="bg-white border border-slate-200 shadow-inner rounded-lg">
+                <div className="border-b border-slate-100 px-6 py-4">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    Website Pages
+                  </h3>
+                </div>
+                <div className="p-6 space-y-3">
+                  {[
+                    { name: "Homepage", url: "/?admin=VANYA_ADMIN_2024" },
+                    { name: "About Us", url: "/about?admin=VANYA_ADMIN_2024" },
+                    {
+                      name: "Our Work",
+                      url: "/our-work?admin=VANYA_ADMIN_2024",
+                    },
+                    { name: "Contact", url: "/contact?admin=VANYA_ADMIN_2024" },
+                  ].map((page) => (
+                    <div
+                      key={page.name}
+                      className="flex justify-between items-center p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                     >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit About
-                    </Button>
-                  </div>
-                  <div className="flex justify-between items-center p-3 border rounded hover:bg-muted/50 transition-colors">
-                    <span>Our Work</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => window.open("/our-work?admin=VANYA_ADMIN_2024", "_blank")}
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Our Work
-                    </Button>
-                  </div>
-                  <div className="flex justify-between items-center p-3 border rounded hover:bg-muted/50 transition-colors">
-                    <span>Contact</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => window.open("/contact?admin=VANYA_ADMIN_2024", "_blank")}
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Contact
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                      <span className="text-slate-900 font-medium">
+                        {page.name}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(page.url, "_blank")}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Media & Content</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center p-3 border rounded hover:bg-muted/50 transition-colors">
-                    <span>Gallery</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => window.open("/gallery?admin=VANYA_ADMIN_2024", "_blank")}
+              <div className="bg-white border border-slate-200 shadow-inner rounded-lg">
+                <div className="border-b border-slate-100 px-6 py-4">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    Media & Content
+                  </h3>
+                </div>
+                <div className="p-6 space-y-3">
+                  {[
+                    { name: "Gallery", url: "/gallery?admin=VANYA_ADMIN_2024" },
+                    {
+                      name: "Blog & News",
+                      url: "/blog?admin=VANYA_ADMIN_2024",
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.name}
+                      className="flex justify-between items-center p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                     >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Gallery
-                    </Button>
-                  </div>
-                  <div className="flex justify-between items-center p-3 border rounded hover:bg-muted/50 transition-colors">
-                    <span>Blog & News</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => window.open("/blog?admin=VANYA_ADMIN_2024", "_blank")}
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Blog
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                      <span className="text-slate-900 font-medium">
+                        {item.name}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(item.url, "_blank")}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </div>
     </div>
-  )
+  );
 }

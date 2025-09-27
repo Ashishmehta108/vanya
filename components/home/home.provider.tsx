@@ -1,12 +1,14 @@
 import { createContext, useContext, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { seedData } from "@/lib/home/seed";
+import { useSession } from "../context/SessionContext";
 
 type WorkCard = {
   _id?: string;
   WorkcardTitle: string;
   WorkcardDescription: string;
   workCardbulletPoints: { points: string[] };
+  icon: string;
 };
 
 type HomeContent = {
@@ -67,6 +69,8 @@ const HomePageContext = createContext<HomePageContextType | undefined>(
 );
 
 const HomePageProvider = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useSession();
+
   const [content, setContent] = useState<HomeContent>(seedData as HomeContent);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -103,6 +107,7 @@ const HomePageProvider = ({ children }: { children: React.ReactNode }) => {
             WorkcardTitle: "New Program",
             WorkcardDescription: "Description...",
             workCardbulletPoints: { points: ["Point 1"] },
+            icon: "chef",
           },
         ],
       },
@@ -162,6 +167,7 @@ const HomePageProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    if (user?.role !== "admin") return;
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -175,9 +181,10 @@ const HomePageProvider = ({ children }: { children: React.ReactNode }) => {
     reader.readAsDataURL(file);
   }
   async function handleSave() {
+    if (user?.role !== "admin") return;
     try {
       setSaving(true);
-      const res = await fetch("/api/set-seed-data", {
+      const res = await fetch("/api/home", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(content),
@@ -198,6 +205,7 @@ const HomePageProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   async function handleCancel() {
+    if (user?.role !== "admin") return;
     await refetch(); // reset to server version
     setIsEditing(false);
   }
@@ -206,6 +214,7 @@ const HomePageProvider = ({ children }: { children: React.ReactNode }) => {
     const res = await fetch("/api/home");
     if (!res.ok) throw new Error("Failed to fetch homepage content");
     const data = await res.json();
+    console.log(data);
     setContent(data.updated ?? data);
     return data;
   };

@@ -1,90 +1,101 @@
-import Link from "next/link"
-import { Heart, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react"
+import Link from "next/link";
+import {
+  Heart,
+  Mail,
+  Phone,
+  MapPin,
+  Facebook,
+  Twitter,
+  Instagram,
+  Linkedin,
+} from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="bg-primary text-white">
+    <footer className="bg-primary text-white relative shadow-inner rounded-t-3xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Logo and Description */}
+          {/* Logo & About */}
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-inner">
                 <Heart className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h3 className="text-xl font-bold">Vanya Foundation</h3>
+                <h3 className="text-2xl font-bold">Vanya Foundation</h3>
                 <p className="text-sm opacity-90">Empowering Communities</p>
               </div>
             </div>
             <p className="text-sm opacity-90 mb-4 max-w-md">
-              Dedicated to creating positive change through education, healthcare, and community development programs
-              across India. Together, we build a better tomorrow.
+              Dedicated to creating positive change through education,
+              healthcare, and community development programs across India.
+              Together, we build a better tomorrow.
             </p>
-            <div className="flex space-x-4">
-              <Facebook className="w-5 h-5 opacity-80 hover:opacity-100 cursor-pointer" />
-              <Twitter className="w-5 h-5 opacity-80 hover:opacity-100 cursor-pointer" />
-              <Instagram className="w-5 h-5 opacity-80 hover:opacity-100 cursor-pointer" />
-              <Linkedin className="w-5 h-5 opacity-80 hover:opacity-100 cursor-pointer" />
+            <div className="flex space-x-4 mt-2">
+              {[Facebook, Twitter, Instagram, Linkedin].map((Icon, i) => (
+                <Icon
+                  key={i}
+                  className="w-5 h-5 opacity-80 hover:opacity-100 cursor-pointer transition-opacity duration-300"
+                />
+              ))}
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-semibold mb-4">Quick Links</h4>
+            <h4 className="font-semibold mb-4 text-lg">Quick Links</h4>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/about" className="opacity-90 hover:opacity-100">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/our-work" className="opacity-90 hover:opacity-100">
-                  Our Work
-                </Link>
-              </li>
-              <li>
-                <Link href="/gallery" className="opacity-90 hover:opacity-100">
-                  Gallery
-                </Link>
-              </li>
-              <li>
-                <Link href="/volunteer" className="opacity-90 hover:opacity-100">
-                  Volunteer
-                </Link>
-              </li>
-              <li>
-                <Link href="/donate" className="opacity-90 hover:opacity-100">
-                  Donate
-                </Link>
-              </li>
+              {[
+                { href: "/about", label: "About Us" },
+                { href: "/our-work", label: "Our Work" },
+                { href: "/gallery", label: "Gallery" },
+                { href: "/volunteer", label: "Volunteer" },
+                { href: "/donate", label: "Donate" },
+              ].map((link, i) => (
+                <li key={i}>
+                  <Link
+                    href={link.href}
+                    className="opacity-90 hover:opacity-100 transition-opacity duration-200"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Contact Info */}
           <div>
-            <h4 className="font-semibold mb-4">Contact Us</h4>
+            <h4 className="font-semibold mb-4 text-lg">Contact Us</h4>
             <div className="space-y-3 text-sm">
               <div className="flex items-center space-x-2">
                 <MapPin className="w-4 h-4" />
-                <span className="opacity-90">123 Foundation Street, New Delhi, India</span>
+                <span className="opacity-90">
+                  Palampur, Kangra, 176083 India
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <Phone className="w-4 h-4" />
-                <span className="opacity-90">+91 98765 43210</span>
+                <span className="opacity-90">+91 7018738126</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="w-4 h-4" />
-                <span className="opacity-90">info@vanyafoundation.org</span>
+                <span className="opacity-90">
+                  himvanyafoundation01@gmail.com
+                </span>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Bottom */}
         <div className="border-t border-white/20 mt-8 pt-8 text-center text-sm opacity-90">
-          <p>&copy; 2024 Vanya Foundation. All rights reserved. | Reg. No: 12345678</p>
+          <p>
+            &copy; 2025 Vanya Foundation. All rights reserved. | Reg. No:
+            12345678
+          </p>
         </div>
       </div>
     </footer>
-  )
+  );
 }

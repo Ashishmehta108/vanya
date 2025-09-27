@@ -1,16 +1,19 @@
 import { Schema, model, InferSchemaType, models } from "mongoose";
 
 const homePageContentSchema = new Schema({
+  topImage: { type: String, required: true },
   heroSection: {
     heroTitle: { type: String, required: true },
     heroTitleHighlight: { type: String, required: true },
     heroImage: { type: String, required: true },
+    heroDescription: { type: String, required: true },
   },
   workSection: {
     ourWorkTitle: { type: String, required: true },
     ourWorkDescription: { type: String, required: true },
     workCard: [
       {
+        icon: { type: String, required: true },
         WorkcardTitle: { type: String, required: true },
         WorkcardDescription: { type: String, required: true },
         workCardbulletPoints: {

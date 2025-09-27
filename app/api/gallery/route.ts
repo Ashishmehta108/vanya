@@ -12,15 +12,6 @@ export async function GET(req: NextRequest) {
   });
 }
 
-export async function POST(req: NextRequest) {
-  await connectToDatabase();
-  const body = await req.json();
-  const gallery = await galleryModel.create(gallerySeed);
-  return NextResponse.json({
-    success: true,
-    data: gallery,
-  });
-}
 
 export async function PATCH(req: NextRequest) {
   await connectToDatabase();

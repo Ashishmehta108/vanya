@@ -21,6 +21,7 @@ const aboutSchema = new Schema({
     valuesDescription: String,
     valuesList: [
       {
+        icon: String,
         valueHeading: String,
         valueDescription: String,
       },

@@ -43,11 +43,7 @@ type WorkContextType = {
   setSaving: React.Dispatch<React.SetStateAction<boolean>>;
   handleSave: () => Promise<void>;
   handleCancel: () => void;
-  handleImageUpload: (
-    e: React.ChangeEvent<HTMLInputElement>,
-    field: string,
-    idx?: number
-  ) => void;
+  handleImageUpload: (e: string, field: string, idx?: number) => void;
   updateHero: (
     field: keyof WorkContent["workHeroSection"],
     value: string
@@ -134,7 +130,7 @@ export const WorkProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateWorkCard = (idx: number, updates: Partial<WorkMainCard>) => {
-    console.log("hi")
+    console.log("hi");
     setContent((prev) => {
       const newCards = [...prev.workMainSection];
       newCards[idx] = { ...newCards[idx], ...updates };
@@ -223,21 +219,8 @@ export const WorkProvider = ({ children }: { children: React.ReactNode }) => {
       },
     }));
   };
-  const handleImageUpload = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    field: string,
-    idx?: number
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-
-      updateWorkCard(idx!, { workMainImage: dataUrl });
-    };
-    reader.readAsDataURL(file);
+  const handleImageUpload = (e: string, field: string, idx?: number) => {
+    updateWorkCard(idx!, { workMainImage: e });
   };
 
   // // Image upload (Cloudinary)

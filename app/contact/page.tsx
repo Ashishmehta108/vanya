@@ -1,18 +1,38 @@
-"use client"
+"use client";
 
-import type React from "react"
+import React, { useEffect, useState } from "react";
 
-import { useState } from "react"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { MapPin, Phone, Mail, Clock, CheckCircle, AlertCircle } from "lucide-react"
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Save, X, Edit3, CheckCircle, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useSession } from "@/components/context/SessionContext";
 
-export default function ContactPage() {
+interface ContactPageContent {
+  _id?: string;
+  heroSection: { heading: string; description: string };
+  contactInfo: {
+    address: string[];
+    phones: string[];
+    emails: string[];
+    officeHours: string[];
+    note: string;
+  };
+}
+
+export default function ContactPageEditor() {
+  const { user } = useSession();
+  const isAdmin = user?.role === "admin";
+
+  const [content, setContent] = useState<ContactPageContent | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Contact form states
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -20,35 +40,70 @@ export default function ContactPage() {
     phone: "",
     subject: "",
     message: "",
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle")
-  const [statusMessage, setStatusMessage] = useState("")
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
+  const [statusMessage, setStatusMessage] = useState("");
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+  // Fetch content
+  useEffect(() => {
+    fetch("/api/contact")
+      .then((res) => res.json())
+      .then((data) => setContent(data.contactPage))
+      .catch(() => setContent(null));
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    setSubmitStatus("idle")
+  // Save content
+  const handleSave = async () => {
+    if (!content) return;
+    setSaving(true);
+    try {
+      await fetch("/api/contact", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(content),
+      });
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Save failed", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    fetch("/api/contact")
+      .then((res) => res.json())
+      .then((data) => setContent(data.contactPage));
+  };
+
+  // Contact form handlers
+  const handleFormInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus("idle");
 
     try {
-      const response = await fetch("/api/contact", {
+      const response = await fetch("/api/contact/submission", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-      })
-
-      const result = await response.json()
+      });
+      const result = await response.json();
 
       if (response.ok) {
-        setSubmitStatus("success")
-        setStatusMessage(result.message)
+        setSubmitStatus("success");
+        setStatusMessage(result.message || "Message sent successfully!");
         setFormData({
           firstName: "",
           lastName: "",
@@ -56,287 +111,250 @@ export default function ContactPage() {
           phone: "",
           subject: "",
           message: "",
-        })
+        });
       } else {
-        setSubmitStatus("error")
-        setStatusMessage(result.error || "Failed to submit form")
+        setSubmitStatus("error");
+        setStatusMessage(result.error || "Failed to submit form");
       }
-    } catch (error) {
-      setSubmitStatus("error")
-      setStatusMessage("Network error. Please try again.")
+    } catch {
+      setSubmitStatus("error");
+      setStatusMessage("Network error. Please try again.");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
+
+  if (!content) return <div className="text-center p-8">Loading...</div>;
 
   return (
     <div className="min-h-screen">
       <Header />
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary/10 to-primary/5 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">Contact Us</h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto text-pretty">
-              Get in touch with us to learn more about our work, volunteer opportunities, or to discuss partnerships.
-              We'd love to hear from you.
-            </p>
-          </div>
+      {/* ✅ Admin Controls */}
+      {isAdmin && (
+        <div className="fixed top-18 right-4 z-50 flex gap-2">
+          {!isEditing ? (
+            <Button onClick={() => setIsEditing(true)}>
+              <Edit3 className="w-4 h-4 mr-2" /> Edit
+            </Button>
+          ) : (
+            <>
+              <Button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-green-600"
+              >
+                <Save className="w-4 h-4 mr-2" />{" "}
+                {saving ? "Saving..." : "Save"}
+              </Button>
+              <Button onClick={handleCancel} variant="outline">
+                <X className="w-4 h-4 mr-2" /> Cancel
+              </Button>
+            </>
+          )}
         </div>
+      )}
+
+      {/* Hero Section */}
+      <section className="py-16 text-center bg-gradient-to-r from-primary/10 to-primary/5">
+        {isEditing ? (
+          <div className="max-w-2xl mx-auto space-y-4">
+            <Input
+              value={content.heroSection.heading}
+              onChange={(e) =>
+                setContent({
+                  ...content,
+                  heroSection: {
+                    ...content.heroSection,
+                    heading: e.target.value,
+                  },
+                })
+              }
+            />
+            <Textarea
+              value={content.heroSection.description}
+              onChange={(e) =>
+                setContent({
+                  ...content,
+                  heroSection: {
+                    ...content.heroSection,
+                    description: e.target.value,
+                  },
+                })
+              }
+            />
+          </div>
+        ) : (
+          <>
+            <h1 className="text-4xl font-bold mb-4">
+              {content.heroSection.heading}
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              {content.heroSection.description}
+            </p>
+          </>
+        )}
       </section>
 
-      {/* Contact Information & Form */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Contact Information */}
-            <div>
-              <h2 className="text-2xl font-bold text-foreground mb-6">Get in Touch</h2>
-              <div className="space-y-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <MapPin className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold mb-2">Our Address</h3>
-                        <p className="text-muted-foreground">
-                          Vanya Foundation
-                          <br />
-                          123 Foundation Street
-                          <br />
-                          Connaught Place
-                          <br />
-                          New Delhi - 110001
-                          <br />
-                          India
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Phone className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold mb-2">Phone Numbers</h3>
-                        <p className="text-muted-foreground">
-                          Main Office: +91 98765 43210
-                          <br />
-                          Helpline: +91 98765 43211
-                          <br />
-                          Emergency: +91 98765 43212
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Mail className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold mb-2">Email Addresses</h3>
-                        <p className="text-muted-foreground">
-                          General: info@vanyafoundation.org
-                          <br />
-                          Donations: donate@vanyafoundation.org
-                          <br />
-                          Volunteer: volunteer@vanyafoundation.org
-                          <br />
-                          Media: media@vanyafoundation.org
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Clock className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold mb-2">Office Hours</h3>
-                        <p className="text-muted-foreground">
-                          Monday - Friday: 9:00 AM - 6:00 PM
-                          <br />
-                          Saturday: 9:00 AM - 2:00 PM
-                          <br />
-                          Sunday: Closed
-                          <br />
-                          <span className="text-sm">(Emergency support available 24/7)</span>
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-
-            {/* Contact Form */}
-            <div>
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-6">Send us a Message</h2>
-
-                  {submitStatus !== "idle" && (
-                    <Alert
-                      className={`mb-6 ${submitStatus === "success" ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}
-                    >
-                      <div className="flex items-center">
-                        {submitStatus === "success" ? (
-                          <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
-                        ) : (
-                          <AlertCircle className="w-4 h-4 text-red-600 mr-2" />
-                        )}
-                        <AlertDescription className={submitStatus === "success" ? "text-green-800" : "text-red-800"}>
-                          {statusMessage}
-                        </AlertDescription>
-                      </div>
-                    </Alert>
-                  )}
-
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="firstName" className="block text-sm font-medium mb-2">
-                          First Name *
-                        </label>
-                        <Input
-                          id="firstName"
-                          name="firstName"
-                          value={formData.firstName}
-                          onChange={handleInputChange}
-                          placeholder="Enter your first name"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="lastName" className="block text-sm font-medium mb-2">
-                          Last Name *
-                        </label>
-                        <Input
-                          id="lastName"
-                          name="lastName"
-                          value={formData.lastName}
-                          onChange={handleInputChange}
-                          placeholder="Enter your last name"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium mb-2">
-                        Email Address *
-                      </label>
+      {/* Contact Info + Form */}
+      <section className="py-16 max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-12">
+        {/* Left side - Contact info */}
+        <div className="space-y-6">
+          {(
+            Object.keys(
+              content.contactInfo
+            ) as (keyof ContactPageContent["contactInfo"])[]
+          )
+            .filter((key) => key !== "note")
+            .map((key) => (
+              <Card key={key}>
+                <CardContent className="p-6 space-y-2">
+                  <h3 className="font-semibold capitalize">{key}</h3>
+                  {isEditing ? (
+                    content.contactInfo[key].map((val, idx) => (
                       <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        placeholder="Enter your email address"
-                        required
+                        key={idx}
+                        value={val}
+                        onChange={(e) => {
+                          const newVals = [...content.contactInfo[key]];
+                          newVals[idx] = e.target.value;
+                          setContent({
+                            ...content,
+                            contactInfo: {
+                              ...content.contactInfo,
+                              [key]: newVals,
+                            },
+                          });
+                        }}
                       />
-                    </div>
-
-                    <div>
-                      <label htmlFor="phone" className="block text-sm font-medium mb-2">
-                        Phone Number
-                      </label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        placeholder="Enter your phone number"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="subject" className="block text-sm font-medium mb-2">
-                        Subject *
-                      </label>
-                      <Input
-                        id="subject"
-                        name="subject"
-                        value={formData.subject}
-                        onChange={handleInputChange}
-                        placeholder="What is this regarding?"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="message" className="block text-sm font-medium mb-2">
-                        Message *
-                      </label>
-                      <Textarea
-                        id="message"
-                        name="message"
-                        value={formData.message}
-                        onChange={handleInputChange}
-                        placeholder="Tell us more about your inquiry..."
-                        rows={6}
-                        required
-                      />
-                    </div>
-
-                    <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isSubmitting}>
-                      {isSubmitting ? "Sending..." : "Send Message"}
-                    </Button>
-                  </form>
-
-                  <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Note:</strong> We typically respond to inquiries within 24-48 hours during business days.
-                      For urgent matters, please call our helpline directly.
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {content.contactInfo[key].join("\n")}
                     </p>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
-            </div>
+            ))}
+
+          <div className="mt-6 bg-muted/40 p-4 rounded-lg">
+            {isEditing ? (
+              <Textarea
+                value={content.contactInfo.note}
+                onChange={(e) =>
+                  setContent({
+                    ...content,
+                    contactInfo: {
+                      ...content.contactInfo,
+                      note: e.target.value,
+                    },
+                  })
+                }
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {content.contactInfo.note}
+              </p>
+            )}
           </div>
         </div>
-      </section>
 
-      {/* Map Section */}
-      <section className="py-16 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-foreground mb-4">Visit Our Office</h2>
-            <p className="text-muted-foreground">
-              Located in the heart of New Delhi, our office is easily accessible by public transport
-            </p>
-          </div>
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="aspect-video bg-muted flex items-center justify-center">
-              <div className="text-center">
-                <MapPin className="w-12 h-12 text-primary mx-auto mb-4" />
-                <p className="text-muted-foreground">Interactive map would be embedded here</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  123 Foundation Street, Connaught Place, New Delhi - 110001
-                </p>
-              </div>
-            </div>
-          </div>
+        {/* Right side - Contact form */}
+        <div>
+          <Card>
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold mb-6">Send us a Message</h2>
+
+              {submitStatus !== "idle" && (
+                <Alert
+                  className={`
+      mb-6 px-4 py-3 rounded-lg shadow-sm border transition-colors duration-300
+      ${
+        submitStatus === "success"
+          ? "border-green-200 bg-green-50"
+          : "border-red-200 bg-red-50"
+      }
+    `}
+                >
+                  <div className="flex items-center gap-2">
+                    {submitStatus === "success" ? (
+                      <CheckCircle className="w-5 h-5 text-green-600 animate-pulse" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-red-600 animate-shake" />
+                    )}
+                    <AlertDescription
+                      className={`
+          font-medium text-sm
+          ${submitStatus === "success" ? "text-green-800" : "text-red-800"}
+        `}
+                    >
+                      {statusMessage}
+                    </AlertDescription>
+                  </div>
+                </Alert>
+              )}
+
+              <form onSubmit={handleFormSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleFormInputChange}
+                    placeholder="First Name *"
+                    required
+                  />
+                  <Input
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleFormInputChange}
+                    placeholder="Last Name *"
+                    required
+                  />
+                </div>
+                <Input
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleFormInputChange}
+                  placeholder="Email *"
+                  required
+                />
+                <Input
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleFormInputChange}
+                  placeholder="Phone"
+                />
+                <Input
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleFormInputChange}
+                  placeholder="Subject *"
+                  required
+                />
+                <Textarea
+                  name="message"
+                  rows={6}
+                  value={formData.message}
+                  onChange={handleFormInputChange}
+                  placeholder="Your message *"
+                  required
+                />
+                <Button
+                  type="submit"
+                  className="w-full bg-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Sending..." : "Send Message"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       <Footer />
     </div>
-  )
+  );
 }

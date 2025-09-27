@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Eye, Save, X, Plus, Trash } from "lucide-react";
+import { Calendar, MapPin, Save, X, Plus, Trash } from "lucide-react";
+import UploadImage from "@/components/UploadImage";
+import { useSession } from "@/components/context/SessionContext";
 
 type GalleryImage = {
   id: string;
@@ -23,6 +25,12 @@ type GalleryImage = {
 };
 
 export default function GalleryPageEditor() {
+  const { user } = useSession();
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    setIsAdmin(user?.role === "admin");
+  }, [user]);
+
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -51,7 +59,6 @@ export default function GalleryPageEditor() {
     const fetchGalleryContent = async () => {
       const res = await fetch("/api/gallery");
       const data = await res.json();
-      // console.log(data)
       setGalleryContent(data.data[0]);
     };
     fetchGalleryContent();
@@ -73,46 +80,10 @@ export default function GalleryPageEditor() {
     updated[idx] = { ...updated[idx], [field]: value };
     setGalleryContent({ ...galleryContent, GalleryImages: updated });
   };
-  const handleImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    idx: number
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result;
-      if (typeof base64 === "string") {
-        updateImage(idx, "image", base64);
-      }
-    };
-    reader.readAsDataURL(file);
+  const handleImageUpload = async (e: string, idx: number) => {
+    updateImage(idx, "image", e);
   };
-
-  // const handleImageUpload = async (
-  //   e: React.ChangeEvent<HTMLInputElement>,
-  //   idx: number
-  // ) => {
-  //   const file = e.target.files?.[0];
-  //   if (!file) return;
-
-  //   const formData = new FormData();
-  //   formData.append("file", file);
-  //   formData.append(
-  //     "upload_preset",
-  //     process.env.NEXT_PUBLIC_CLOUDINARY_PRESET!
-  //   );
-
-  //   const res = await fetch(
-  //     `https://api.cloudinary.com/v1_1/${process.env
-  //       .NEXT_PUBLIC_CLOUDINARY_CLOUD!}/image/upload`,
-  //     { method: "POST", body: formData }
-  //   );
-  //   const data = await res.json();
-
-  //   updateImage(idx, "image", data.secure_url);
-  // };
 
   const handleSave = async () => {
     setSaving(true);
@@ -133,10 +104,9 @@ export default function GalleryPageEditor() {
   const ImageCard = ({ image, idx }: { image: GalleryImage; idx: number }) => (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow group">
       <div className="relative aspect-[4/3] overflow-hidden">
-        {isEditing ? (
-          <Input
-            type="file"
-            accept="image/*"
+        {isEditing && isAdmin ? (
+          <UploadImage
+            value={image.image}
             onChange={(e) => handleImageUpload(e, idx)}
           />
         ) : (
@@ -153,7 +123,7 @@ export default function GalleryPageEditor() {
         </div>
       </div>
       <CardContent className="p-4">
-        {isEditing ? (
+        {isEditing && isAdmin ? (
           <div className="space-y-2">
             <Input
               value={image.title}
@@ -222,29 +192,31 @@ export default function GalleryPageEditor() {
       <Header />
 
       {/* Admin controls */}
-      <div className="fixed top-4 right-4 z-50 flex gap-2">
-        {!isEditing ? (
-          <Button onClick={() => setIsEditing(true)}>Edit Gallery</Button>
-        ) : (
-          <>
-            <Button
-              onClick={handleSave}
-              className="bg-green-600 hover:bg-green-700"
-              disabled={saving}
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {saving ? "Saving..." : "Save"}
-            </Button>
-            <Button onClick={() => setIsEditing(false)} variant="outline">
-              <X className="w-4 h-4 mr-2" /> Cancel
-            </Button>
-          </>
-        )}
-      </div>
+      {isAdmin && (
+        <div className="fixed top-18 right-4 z-50 flex gap-2">
+          {!isEditing ? (
+            <Button onClick={() => setIsEditing(true)}>Edit Gallery</Button>
+          ) : (
+            <>
+              <Button
+                onClick={handleSave}
+                className="bg-green-600 hover:bg-green-700"
+                disabled={saving}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {saving ? "Saving..." : "Save"}
+              </Button>
+              <Button onClick={() => setIsEditing(false)} variant="outline">
+                <X className="w-4 h-4 mr-2" /> Cancel
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Hero */}
       <section className="bg-gradient-to-r from-primary/10 to-primary/5 py-16 text-center">
-        {isEditing ? (
+        {isEditing && isAdmin ? (
           <div className="space-y-4 max-w-3xl mx-auto">
             <Input
               value={galleryContent.GalleryHeroSection.GalleryHeroHeading}
@@ -296,7 +268,7 @@ export default function GalleryPageEditor() {
           ))}
         </Tabs>
 
-        {isEditing && (
+        {isEditing && isAdmin && (
           <div className="mt-8 text-center">
             <Button
               onClick={() =>

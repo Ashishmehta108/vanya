@@ -15,11 +15,17 @@ export async function GET(
   });
 }
 
-export async function POST(request: Request) {
+
+
+
+export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+  const id = params.id;
   const body = await request.json();
-  const blogPost = await BlogPost.create(body);
+  const blogPost = await BlogPost.findByIdAndUpdate(id, { $set: body });
   return NextResponse.json({
-    message: "Blog post created successfully",
+    message: "Blog post updated successfully",
     blogPost,
   });
 }
+
+
