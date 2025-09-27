@@ -7,7 +7,7 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "postinstall": "ts-node scripts/seed.cjs"
+    "postinstall": "ts-node scripts/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
