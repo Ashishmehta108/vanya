@@ -1,14 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Donation from "@/lib/donations/donation";
 
-export async function GET(req: Request) {
+export const dynamic = "force-dynamic"; // ensures the route is always dynamic
+
+export async function GET(request: NextRequest) {
     await connectToDatabase();
 
     try {
-        const url = new URL(req.url);
-        const page = parseInt(url.searchParams.get("page") || "1");
-        const limit = parseInt(url.searchParams.get("limit") || "5");
+        const url = request.nextUrl; 
+        const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const limit = parseInt(url.searchParams.get("limit") || "5", 10);
         const skip = (page - 1) * limit;
 
         const total = await Donation.countDocuments();
@@ -19,8 +21,8 @@ export async function GET(req: Request) {
 
         const totalPages = Math.ceil(total / limit);
 
-        const formatted = donations.map(d => ({
-            id: d._id,
+        const formatted = donations.map((d) => ({
+            id: d._id.toString(),
             donor: d.name,
             email: d.email,
             amount: d.amount,
@@ -30,9 +32,15 @@ export async function GET(req: Request) {
             date: d.createdAt,
         }));
 
-        return NextResponse.json({ donations: formatted, pagination: { total, page, limit, totalPages } });
+        return NextResponse.json({
+            donations: formatted,
+            pagination: { total, page, limit, totalPages },
+        });
     } catch (error) {
-        console.error(error);
+        console.error("Failed to fetch donations:", error);
         return NextResponse.json({ error: "Failed to fetch donations" }, { status: 500 });
     }
 }
+
+
+
